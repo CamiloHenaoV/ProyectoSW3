@@ -1,17 +1,41 @@
 .app-button {
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  appearance: none;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #f8f5f2;
+  padding: 0.82rem 1.2rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 
-  &--primary { background: #1e293b; color: #fff; }
-  &--secondary { background: #e2e8f0; color: #1e293b; }
-  &--danger { background: #dc2626; color: #fff; }
+  &--primary {
+    background: var(--ink);
+    color: #f8f5f2;
+    border-color: var(--ink);
+  }
+
+  &--secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+
+  &--danger {
+    background: var(--error);
+    border-color: var(--error);
+    color: #f8f5f2;
+  }
 }

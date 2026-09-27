@@ -1,2 +1,26 @@
-.pagina { display: flex; flex-direction: column; gap: 0.5rem; }
-.error { color: #dc2626; }
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 980px;
+}
+
+.pagina h2 {
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  line-height: 0.9;
+  margin-bottom: 0.2rem;
+}
+
+.pagina h3 {
+  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+  line-height: 1;
+}
+
+.error {
+  color: var(--error);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}

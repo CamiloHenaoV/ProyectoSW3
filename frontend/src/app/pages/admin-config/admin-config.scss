@@ -1,2 +1,16 @@
-.pagina { display: flex; flex-direction: column; gap: 1rem; max-width: 480px; }
-.mensaje { color: #15803d; font-weight: 600; }
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 760px;
+}
+
+.pagina h2 {
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  line-height: 0.9;
+}
+
+.mensaje {
+  color: var(--success);
+  font-weight: 700;
+}

@@ -1,13 +1,16 @@
 .app-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.9rem;
   width: 100%;
+  padding: 0.8rem 0.9rem;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: 0.96rem;
   box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
-    outline: 2px solid #1e293b;
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px rgba(23, 20, 18, 0.08);
   }
 }
