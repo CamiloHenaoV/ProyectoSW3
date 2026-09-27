@@ -19,6 +19,10 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
+builder.Services.AddScoped<CitasMedicas.Api.Shared.Infrastructure.IMongoContext,
+                            CitasMedicas.Api.Shared.Infrastructure.MongoContext>();
+builder.Services.AddControllers();
+
 // --- 2. Servicios OpenAPI y CORS ---
 builder.Services.AddOpenApi();
 
@@ -77,6 +81,7 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+app.MapControllers();
 app.Run();
 
 // --- Clases de soporte ---
