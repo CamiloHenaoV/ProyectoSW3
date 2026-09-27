@@ -10,6 +10,10 @@ public static class SchedulingModule
     {
         services.AddScoped<IMedicoRepository, MedicoRepository>();
         services.AddScoped<IMedicoService, MedicoService>();
+
+        services.AddScoped<ICitaRepository, CitaRepository>();
+        services.AddScoped<ICitaService, CitaService>();
+
         return services;
     }
 }
