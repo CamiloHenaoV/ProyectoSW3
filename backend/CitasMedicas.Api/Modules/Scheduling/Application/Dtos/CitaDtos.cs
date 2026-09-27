@@ -11,3 +11,4 @@ public record CitaListadoDto(
     string Estado,
     string? PacienteId
 );
+public record FranjaDisponibleDto(DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin);

@@ -27,4 +27,12 @@ public class CitasController : ControllerBase
         var citas = await _citaService.ListarPorMedicoYFechaAsync(medicoId, fecha);
         return Ok(citas);
     }
+    // Soporte de RF2: GET /api/citas/franjas-disponibles?medicoId=...&fecha=2026-10-05
+[HttpGet("franjas-disponibles")]
+public async Task<ActionResult<List<FranjaDisponibleDto>>> FranjasDisponibles(
+    [FromQuery] string medicoId, [FromQuery] DateTime fecha)
+{
+    var franjas = await _citaService.ObtenerFranjasDisponiblesAsync(medicoId, fecha);
+    return Ok(franjas);
+}
 }
