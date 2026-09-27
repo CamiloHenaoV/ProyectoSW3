@@ -47,7 +47,6 @@ public class CitaService : ICitaService
             .ToList();
     }
 
-    // Soporte de RF2: franjas disponibles segun la configuracion (RF3)
     public async Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha)
     {
         var configuracion = await _configuracionService.ObtenerPorMedicoAsync(medicoId);
@@ -71,4 +70,29 @@ public class CitaService : ICitaService
             .Select(f => new FranjaDisponibleDto(fechaNormalizada, f.Inicio, f.Fin))
             .ToList();
     }
+    public async Task<CitaListadoDto> AgendarAsync(AgendarCitaRequest request)
+{
+    var medico = await _medicoRepository.GetByIdAsync(request.MedicoId)
+        ?? throw new InvalidOperationException("El medico/terapista no existe.");
+
+    var franjas = await ObtenerFranjasDisponiblesAsync(request.MedicoId, request.Fecha);
+    var franja = franjas.FirstOrDefault(f => f.HoraInicio == request.HoraInicio)
+        ?? throw new InvalidOperationException("La franja seleccionada ya no esta disponible.");
+
+    var cita = new Cita
+    {
+        MedicoId = request.MedicoId,
+        Fecha = DateTime.SpecifyKind(request.Fecha.Date, DateTimeKind.Utc),
+        HoraInicio = franja.HoraInicio,
+        HoraFin = franja.HoraFin,
+        Estado = EstadoCita.Agendada,
+        PacienteId = request.PacienteId
+    };
+
+    await _citaRepository.CreateAsync(cita);
+
+    return new CitaListadoDto(
+        cita.Id, cita.MedicoId, medico.Nombre, cita.Fecha,
+        cita.HoraInicio, cita.HoraFin, cita.Estado.ToString(), cita.PacienteId);
+}
 }

@@ -35,4 +35,17 @@ public async Task<ActionResult<List<FranjaDisponibleDto>>> FranjasDisponibles(
     var franjas = await _citaService.ObtenerFranjasDisponiblesAsync(medicoId, fecha);
     return Ok(franjas);
 }
+[HttpPost("agendar")]
+public async Task<ActionResult<CitaListadoDto>> Agendar([FromBody] AgendarCitaRequest request)
+{
+    try
+    {
+        var cita = await _citaService.AgendarAsync(request);
+        return CreatedAtAction(nameof(Listar), new { medicoId = cita.MedicoId, fecha = cita.Fecha }, cita);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Conflict(new { mensaje = ex.Message });
+    }
+}
 }
