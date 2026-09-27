@@ -1,0 +1,14 @@
+<div class="filtro">
+  <app-select-field
+    placeholder="Médico/Terapista"
+    [options]="opciones()"
+    [value]="medicoId()"
+    (valueChange)="medicoIdChange.emit($event)"
+  />
+  <app-input-field
+    type="date"
+    [value]="fecha()"
+    (valueChange)="fechaChange.emit($event)"
+  />
+  <app-button label="Buscar" (clicked)="buscar.emit()" />
+</div>

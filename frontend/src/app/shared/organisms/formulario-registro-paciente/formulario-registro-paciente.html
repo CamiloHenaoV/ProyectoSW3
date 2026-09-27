@@ -1,0 +1,8 @@
+<form class="form-registro" (submit)="$event.preventDefault(); onSubmit()">
+  <app-form-field label="Nombre completo" [value]="nombre" (valueChange)="nombre = $event" [required]="true" />
+  <app-form-field label="Documento de identidad" [value]="documentoIdentidad" (valueChange)="documentoIdentidad = $event" [required]="true" />
+  <app-form-field label="Teléfono" [value]="telefono" (valueChange)="telefono = $event" [required]="true" />
+  <app-form-field label="Correo electrónico" type="email" [value]="email" (valueChange)="email = $event" [required]="true" />
+  <app-form-field label="Contraseña" type="password" [value]="password" (valueChange)="password = $event" [required]="true" />
+  <app-button label="Registrarme y continuar" type="submit" [disabled]="enviando()" />
+</form>

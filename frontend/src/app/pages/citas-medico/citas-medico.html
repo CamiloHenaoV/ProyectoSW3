@@ -1,0 +1,21 @@
+<section class="pagina">
+  <h2>Listado de citas por médico/terapista y fecha</h2>
+
+  <app-filtro-fecha-medico
+    [medicos]="medicos()"
+    [medicoId]="medicoId()"
+    [fecha]="fecha()"
+    (medicoIdChange)="medicoId.set($event)"
+    (fechaChange)="fecha.set($event)"
+    (buscar)="buscar()"
+  />
+
+  @if (mensajeError()) {
+    <p class="error">{{ mensajeError() }}</p>
+  }
+  @if (cargando()) {
+    <p>Cargando...</p>
+  }
+
+  <app-tabla-citas [citas]="citas()" />
+</section>

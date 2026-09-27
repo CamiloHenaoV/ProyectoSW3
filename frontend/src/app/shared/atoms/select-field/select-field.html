@@ -1,0 +1,6 @@
+<select class="app-select" [name]="name()" [value]="value()" (change)="onChange($event)">
+  <option value="" disabled selected>{{ placeholder() }}</option>
+  @for (opcion of options(); track opcion.value) {
+    <option [value]="opcion.value">{{ opcion.label }}</option>
+  }
+</select>

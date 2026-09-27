@@ -1,0 +1,11 @@
+.filtro {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.filtro app-select-field,
+.filtro app-input-field {
+  min-width: 220px;
+}

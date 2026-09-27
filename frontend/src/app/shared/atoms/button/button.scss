@@ -1,0 +1,17 @@
+.app-button {
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary { background: #1e293b; color: #fff; }
+  &--secondary { background: #e2e8f0; color: #1e293b; }
+  &--danger { background: #dc2626; color: #fff; }
+}

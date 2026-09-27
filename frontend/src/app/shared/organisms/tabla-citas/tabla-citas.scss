@@ -1,0 +1,11 @@
+.tabla-citas {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla-citas th, .tabla-citas td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.total { font-weight: 600; margin-top: 0.5rem; }
+.vacio { color: #64748b; }

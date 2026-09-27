@@ -1,0 +1,34 @@
+<form class="form-config" (submit)="$event.preventDefault(); onSubmit()">
+  <fieldset class="dias">
+    <legend>Días de atención</legend>
+    @for (dia of diasSemana; track dia.valor) {
+      <label class="dia">
+        <input
+          type="checkbox"
+          [checked]="diasSeleccionados.has(dia.valor)"
+          (change)="toggleDia(dia.valor)"
+        />
+        {{ dia.nombre }}
+      </label>
+    }
+  </fieldset>
+
+  <label class="campo">
+    Hora inicio
+    <app-input-field type="time" [value]="horaInicio" (valueChange)="horaInicio = $event" />
+  </label>
+  <label class="campo">
+    Hora fin
+    <app-input-field type="time" [value]="horaFin" (valueChange)="horaFin = $event" />
+  </label>
+  <label class="campo">
+    Intervalo entre citas (minutos)
+    <app-input-field type="number" min="5" [value]="intervaloMinutos" (valueChange)="intervaloMinutos = $event" />
+  </label>
+  <label class="campo">
+    Semanas habilitadas para agendar
+    <app-input-field type="number" min="1" [value]="semanasHabilitadas" (valueChange)="semanasHabilitadas = $event" />
+  </label>
+
+  <app-button label="Guardar configuración" type="submit" />
+</form>

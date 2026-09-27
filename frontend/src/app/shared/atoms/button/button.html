@@ -1,0 +1,8 @@
+<button
+  [type]="type()"
+  class="app-button app-button--{{ variant() }}"
+  [disabled]="disabled()"
+  (click)="onClick()"
+>
+  {{ label() }}
+</button>

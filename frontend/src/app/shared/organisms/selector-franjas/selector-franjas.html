@@ -1,0 +1,16 @@
+@if (franjas().length) {
+  <div class="franjas">
+    @for (franja of franjas(); track franja.horaInicio) {
+      <button
+        type="button"
+        class="franja"
+        [class.franja--seleccionada]="esSeleccionada(franja)"
+        (click)="seleccionar.emit(franja)"
+      >
+        {{ franja.horaInicio }}
+      </button>
+    }
+  </div>
+} @else {
+  <p class="vacio">No hay franjas disponibles para esa fecha.</p>
+}

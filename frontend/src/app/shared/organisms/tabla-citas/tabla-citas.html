@@ -1,0 +1,25 @@
+@if (citas().length) {
+  <table class="tabla-citas">
+    <thead>
+      <tr>
+        <th>Hora inicio</th>
+        <th>Hora fin</th>
+        <th>Estado</th>
+        <th>Paciente</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cita of citas(); track cita.id) {
+        <tr>
+          <td>{{ cita.horaInicio }}</td>
+          <td>{{ cita.horaFin }}</td>
+          <td><app-badge-estado [estado]="cita.estado" /></td>
+          <td>{{ cita.pacienteId || '—' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <p class="total">Total de citas: {{ citas().length }}</p>
+} @else {
+  <p class="vacio">No hay citas para ese médico/terapista en esa fecha.</p>
+}

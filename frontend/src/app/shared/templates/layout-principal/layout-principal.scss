@@ -1,0 +1,13 @@
+.topbar {
+  background: #1e293b;
+  color: #fff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+.topbar h1 { font-size: 1.1rem; margin: 0; }
+.topbar nav { display: flex; gap: 1rem; }
+.topbar nav a { color: #cbd5e1; text-decoration: none; font-size: 0.9rem; }
+.topbar nav a:hover { color: #fff; }
+.contenido { padding: 1.5rem; max-width: 900px; margin: 0 auto; }

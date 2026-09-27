@@ -1,0 +1,14 @@
+<label class="form-field">
+  <span class="form-field__label">{{ label() }}</span>
+  <app-input-field
+    [type]="type()"
+    [name]="name()"
+    [value]="value()"
+    [placeholder]="placeholder()"
+    [required]="required()"
+    (valueChange)="valueChange.emit($event)"
+  />
+  @if (error()) {
+    <span class="form-field__error">{{ error() }}</span>
+  }
+</label>

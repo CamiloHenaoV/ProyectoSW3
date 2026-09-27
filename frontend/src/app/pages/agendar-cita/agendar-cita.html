@@ -1,0 +1,44 @@
+<section class="pagina">
+  <h2>Agendar una cita</h2>
+
+  @if (mensaje()) {
+    <p [class.error]="mensajeEsError()">{{ mensaje() }}</p>
+  }
+
+  @if (paso() === 1) {
+    <h3>1. Regístrate</h3>
+    <app-formulario-registro-paciente (registrar)="registrarPaciente($event)" />
+  }
+
+  @if (paso() === 2) {
+    <h3>2. Elige médico/terapista, fecha y horario</h3>
+    <div class="seleccion">
+      <app-select-field
+        placeholder="Médico/Terapista"
+        [options]="opcionesMedicos"
+        [value]="medicoId()"
+        (valueChange)="medicoId.set($event)"
+      />
+      <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
+      <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
+    </div>
+
+    <app-selector-franjas
+      [franjas]="franjas()"
+      [seleccionada]="franjaSeleccionada()"
+      (seleccionar)="franjaSeleccionada.set($event)"
+    />
+
+    <app-button
+      label="Confirmar cita"
+      [disabled]="!franjaSeleccionada()"
+      (clicked)="confirmarCita()"
+    />
+  }
+
+  @if (paso() === 3) {
+    <div class="confirmacion">
+      <h3>✅ Tu cita ha sido agendada</h3>
+    </div>
+  }
+</section>

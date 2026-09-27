@@ -1,0 +1,21 @@
+<section class="pagina">
+  <h2>Configuración de agendamiento (Administrador)</h2>
+
+  <app-select-field
+    placeholder="Médico/Terapista"
+    [options]="opcionesMedicos"
+    [value]="medicoId()"
+    (valueChange)="onMedicoSeleccionado($event)"
+  />
+
+  @if (medicoId()) {
+    <app-formulario-configuracion
+      [medicoId]="medicoId()"
+      [configuracion]="configuracion()"
+      (guardar)="guardar($event)"
+    />
+    @if (mensaje()) {
+      <p class="mensaje">{{ mensaje() }}</p>
+    }
+  }
+</section>

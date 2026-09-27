@@ -1,0 +1,12 @@
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--disponible { background: #e0f2fe; color: #0369a1; }
+  &--agendada { background: #dcfce7; color: #15803d; }
+  &--cancelada { background: #fee2e2; color: #b91c1c; }
+  &--atendida { background: #ede9fe; color: #6d28d9; }
+}
