@@ -37,3 +37,4 @@ C:\Users\jchvi\OneDrive\Escritorio\Dev\ProyectoPiedrazulSW3\backend\CitasMedicas
 C:\Users\jchvi\OneDrive\Escritorio\Dev\ProyectoPiedrazulSW3\backend\CitasMedicas.Api\obj\Debug\net10.0\CitasMedicas.Api.pdb
 C:\Users\jchvi\OneDrive\Escritorio\Dev\ProyectoPiedrazulSW3\backend\CitasMedicas.Api\obj\Debug\net10.0\CitasMedicas.Api.genruntimeconfig.cache
 C:\Users\jchvi\OneDrive\Escritorio\Dev\ProyectoPiedrazulSW3\backend\CitasMedicas.Api\obj\Debug\net10.0\ref\CitasMedicas.Api.dll
+C:\Users\jchvi\OneDrive\Escritorio\Dev\ProyectoPiedrazulSW3\backend\CitasMedicas.Api\obj\Debug\net10.0\CitasMedicas.Api.sourcelink.json
