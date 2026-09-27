@@ -1,9 +1,9 @@
 using MongoDB.Driver;
 using CitasMedicas.Api.Modules.Scheduling;
 using CitasMedicas.Api.Shared.Infrastructure;
-
+using CitasMedicas.Api.Modules.Configuration;
 var builder = WebApplication.CreateBuilder(args);
-
+CitasMedicas.Api.Shared.Infrastructure.MongoConventions.Registrar();
 // --- 1. Configuración de MongoDB ---
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
@@ -25,6 +25,7 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 builder.Services.AddScoped<IMongoContext, MongoContext>();
 
 builder.Services.AddSchedulingModule();
+builder.Services.AddConfigurationModule();
 builder.Services.AddControllers();
 
 // --- 2. Servicios OpenAPI y CORS ---
