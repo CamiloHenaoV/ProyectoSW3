@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using CitasMedicas.Api.Modules.Scheduling;
+using CitasMedicas.Api.Shared.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +21,10 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
-builder.Services.AddScoped<CitasMedicas.Api.Shared.Infrastructure.IMongoContext,
-                            CitasMedicas.Api.Shared.Infrastructure.MongoContext>();
+// Kernel compartido (Paso 1) — esto faltaba
+builder.Services.AddScoped<IMongoContext, MongoContext>();
+
+builder.Services.AddSchedulingModule();
 builder.Services.AddControllers();
 
 // --- 2. Servicios OpenAPI y CORS ---
