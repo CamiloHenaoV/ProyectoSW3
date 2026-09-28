@@ -17,6 +17,9 @@ public class ConfiguracionService : IConfiguracionService
 
     public async Task<ConfiguracionMedicoDto?> ObtenerPorMedicoAsync(string medicoId)
     {
+        if (string.IsNullOrWhiteSpace(medicoId))
+            return null;
+
         var filter = Builders<ConfiguracionMedico>.Filter.Eq(c => c.MedicoId, medicoId);
         var config = await _repository.FindOneAsync(filter);
         return config is null ? null : MapToDto(config);
@@ -24,6 +27,21 @@ public class ConfiguracionService : IConfiguracionService
 
     public async Task<ConfiguracionMedicoDto> GuardarAsync(GuardarConfiguracionRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.MedicoId))
+            throw new InvalidOperationException("El médico es obligatorio.");
+
+        if (request.DiasAtencion is null || request.DiasAtencion.Count == 0)
+            throw new InvalidOperationException("Debe seleccionar al menos un día de atención.");
+
+        if (request.IntervaloMinutos <= 0)
+            throw new InvalidOperationException("El intervalo debe ser mayor que cero.");
+
+        if (request.HoraFin <= request.HoraInicio)
+            throw new InvalidOperationException("La hora de fin debe ser posterior a la hora de inicio.");
+
+        if (request.SemanasHabilitadas < 1)
+            throw new InvalidOperationException("Las semanas habilitadas deben ser al menos 1.");
+
         var filter = Builders<ConfiguracionMedico>.Filter.Eq(c => c.MedicoId, request.MedicoId);
         var existente = await _repository.FindOneAsync(filter);
 

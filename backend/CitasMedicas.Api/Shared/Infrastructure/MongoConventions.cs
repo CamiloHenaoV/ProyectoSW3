@@ -8,8 +8,9 @@ public static class MongoConventions
     {
         var pack = new ConventionPack
         {
-            new CamelCaseElementNameConvention() // C# PascalCase -> Mongo camelCase
+            new CamelCaseElementNameConvention()
         };
+
         ConventionRegistry.Register("camelCase", pack, _ => true);
     }
 }

@@ -12,7 +12,13 @@ public class FranjasFijasStrategy : IGeneradorFranjasStrategy
     {
         var resultado = new List<(TimeSpan, TimeSpan)>();
 
-        if (!configuracion.DiasAtencion.Contains(fecha.DayOfWeek))
+        if (configuracion is null)
+            return resultado;
+
+        if (configuracion.IntervaloMinutos <= 0 || configuracion.HoraFin <= configuracion.HoraInicio)
+            return resultado;
+
+        if (configuracion.DiasAtencion is null || !configuracion.DiasAtencion.Contains(fecha.DayOfWeek))
             return resultado;
 
         var ocupadas = citasExistentes

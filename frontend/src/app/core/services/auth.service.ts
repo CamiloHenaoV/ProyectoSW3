@@ -29,7 +29,24 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+      const exp = Number(payload.exp ?? 0) * 1000;
+      if (!Number.isFinite(exp) || Date.now() >= exp) {
+        this.logout();
+        return null;
+      }
+    } catch {
+      this.logout();
+      return null;
+    }
+
+    return token;
   }
 
   getUsuario(): UsuarioAutenticadoDto | null {

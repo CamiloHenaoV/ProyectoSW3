@@ -29,6 +29,9 @@ public class CitaService : ICitaService
 
     public async Task<List<CitaListadoDto>> ListarPorMedicoYFechaAsync(string medicoId, DateTime fecha)
     {
+        if (string.IsNullOrWhiteSpace(medicoId))
+            return new List<CitaListadoDto>();
+
         var medico = await _medicoRepository.GetByIdAsync(medicoId);
         var fechaNormalizada = DateTime.SpecifyKind(fecha.Date, DateTimeKind.Utc);
 
@@ -78,6 +81,9 @@ public class CitaService : ICitaService
 
     public async Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha)
     {
+        if (string.IsNullOrWhiteSpace(medicoId))
+            return new List<FranjaDisponibleDto>();
+
         var configuracion = await _configuracionService.ObtenerPorMedicoAsync(medicoId);
         if (configuracion is null)
             return new List<FranjaDisponibleDto>();
@@ -85,7 +91,7 @@ public class CitaService : ICitaService
         var fechaNormalizada = DateTime.SpecifyKind(fecha.Date, DateTimeKind.Utc);
 
         var limite = DateTime.UtcNow.Date.AddDays(7 * configuracion.SemanasHabilitadas);
-        if (fechaNormalizada > limite)
+        if (fechaNormalizada > limite || fechaNormalizada < DateTime.UtcNow.Date)
             return new List<FranjaDisponibleDto>();
 
         var filtro = Builders<Cita>.Filter.And(
@@ -100,20 +106,40 @@ public class CitaService : ICitaService
             .ToList();
     }
 
-    // RF2: el pacienteId viene del token (lo resuelve el controlador), no del body
     public async Task<CitaListadoDto> AgendarAsync(string pacienteId, AgendarCitaRequest request)
     {
+        if (string.IsNullOrWhiteSpace(pacienteId))
+            throw new InvalidOperationException("El paciente no está autenticado.");
+
+        if (string.IsNullOrWhiteSpace(request.MedicoId) || request.MedicoId.Length != 24)
+            throw new InvalidOperationException("El médico seleccionado no es válido.");
+
+        if (request.Fecha.Date < DateTime.UtcNow.Date)
+            throw new InvalidOperationException("No se puede agendar en fechas pasadas.");
+
         var medico = await _medicoRepository.GetByIdAsync(request.MedicoId)
             ?? throw new InvalidOperationException("El medico/terapista no existe.");
 
         var franjas = await ObtenerFranjasDisponiblesAsync(request.MedicoId, request.Fecha);
         var franja = franjas.FirstOrDefault(f => f.HoraInicio == request.HoraInicio)
-            ?? throw new InvalidOperationException("La franja seleccionada ya no esta disponible.");
+            ?? throw new InvalidOperationException("La franja seleccionada ya no está disponible.");
+
+        var fechaNormalizada = DateTime.SpecifyKind(request.Fecha.Date, DateTimeKind.Utc);
+        var yaExiste = await _citaRepository.FindOneAsync(
+            Builders<Cita>.Filter.And(
+                Builders<Cita>.Filter.Eq(c => c.MedicoId, request.MedicoId),
+                Builders<Cita>.Filter.Eq(c => c.Fecha, fechaNormalizada),
+                Builders<Cita>.Filter.Eq(c => c.HoraInicio, request.HoraInicio),
+                Builders<Cita>.Filter.Ne(c => c.Estado, EstadoCita.Cancelada)
+            ));
+
+        if (yaExiste is not null)
+            throw new InvalidOperationException("La cita ya está ocupada en ese horario.");
 
         var cita = new Cita
         {
             MedicoId = request.MedicoId,
-            Fecha = DateTime.SpecifyKind(request.Fecha.Date, DateTimeKind.Utc),
+            Fecha = fechaNormalizada,
             HoraInicio = franja.HoraInicio,
             HoraFin = franja.HoraFin,
             Estado = EstadoCita.Agendada,

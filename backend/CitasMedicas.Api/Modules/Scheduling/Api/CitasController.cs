@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CitasMedicas.Api.Modules.Scheduling.Application.Dtos;
 using CitasMedicas.Api.Modules.Scheduling.Application.Interfaces;
 using CitasMedicas.Api.Shared.Security;
+using MongoDB.Bson;
 
 namespace CitasMedicas.Api.Modules.Scheduling.Api;
 
@@ -19,7 +20,6 @@ public class CitasController : ControllerBase
         _citaService = citaService;
     }
 
-    // RF1: solo agendadores y administradores ven el listado de citas de un medico
     [HttpGet]
     [Authorize(Roles = $"{Roles.Agendador},{Roles.Administrador}")]
     public async Task<ActionResult<List<CitaListadoDto>>> Listar(
@@ -28,15 +28,23 @@ public class CitasController : ControllerBase
         if (string.IsNullOrWhiteSpace(medicoId))
             return BadRequest(new { mensaje = "medicoId es requerido." });
 
+        if (!ObjectId.TryParse(medicoId, out _))
+            return BadRequest(new { mensaje = "medicoId no es válido." });
+
         var citas = await _citaService.ListarPorMedicoYFechaAsync(medicoId, fecha);
         return Ok(citas);
     }
 
-    // Soporte de RF2: cualquier usuario autenticado puede consultar franjas
     [HttpGet("franjas-disponibles")]
     public async Task<ActionResult<List<FranjaDisponibleDto>>> FranjasDisponibles(
         [FromQuery] string medicoId, [FromQuery] DateTime fecha)
     {
+        if (string.IsNullOrWhiteSpace(medicoId))
+            return BadRequest(new { mensaje = "medicoId es requerido." });
+
+        if (!ObjectId.TryParse(medicoId, out _))
+            return BadRequest(new { mensaje = "medicoId no es válido." });
+
         var franjas = await _citaService.ObtenerFranjasDisponiblesAsync(medicoId, fecha);
         return Ok(franjas);
     }
@@ -53,13 +61,12 @@ public class CitasController : ControllerBase
         return Ok(citas);
     }
 
-    // RF2: solo pacientes agendan; el paciente sale del token, no del body
     [HttpPost("agendar")]
     [Authorize(Roles = Roles.Paciente)]
     public async Task<ActionResult<CitaListadoDto>> Agendar([FromBody] AgendarCitaRequest request)
     {
         var pacienteId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(pacienteId))
+        if (string.IsNullOrWhiteSpace(pacienteId))
             return Unauthorized();
 
         try
@@ -71,6 +78,10 @@ public class CitasController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { mensaje = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensaje = ex.Message });
         }
     }
 }

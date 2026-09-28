@@ -1,18 +1,21 @@
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using CitasMedicas.Api.Modules.Scheduling;
-using CitasMedicas.Api.Shared.Infrastructure;
 using CitasMedicas.Api.Modules.Configuration;
 using CitasMedicas.Api.Modules.Patients;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using CitasMedicas.Api.Modules.Scheduling;
+using CitasMedicas.Api.Shared.Infrastructure;
 using CitasMedicas.Api.Shared.Security;
 
 var builder = WebApplication.CreateBuilder(args);
-CitasMedicas.Api.Shared.Infrastructure.MongoConventions.Registrar();
-// --- 1. Configuración de MongoDB ---
-builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDbSettings"));
+MongoConventions.Registrar();
+
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -27,13 +30,12 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
-// Kernel compartido (Paso 1) — esto faltaba
 builder.Services.AddScoped<IMongoContext, MongoContext>();
 
 builder.Services.AddSchedulingModule();
 builder.Services.AddConfigurationModule();
 builder.Services.AddPatientsModule();
-// --- Autenticación JWT ---
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
@@ -58,10 +60,25 @@ builder.Services
             ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
+
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 
-// --- 2. Servicios OpenAPI y CORS ---
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
@@ -81,56 +98,35 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseCors("AllowAngular");
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-// --- 3. Endpoint de prueba de conexión a MongoDB Atlas ---
-app.MapGet("/api/test-db", async (IMongoDatabase database) =>
+app.UseExceptionHandler(exceptionHandlerApp =>
 {
-    try
+    exceptionHandlerApp.Run(async context =>
     {
-        var command = new MongoDB.Bson.BsonDocument("ping", 1);
-        await database.RunCommandAsync<MongoDB.Bson.BsonDocument>(command);
-        return Results.Ok(new { status = "OK", message = "¡Conexión a MongoDB Atlas Exitosa!" });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Error al conectar a MongoDB: {ex.Message}");
-    }
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+        var statusCode = exception switch
+        {
+            InvalidOperationException => StatusCodes.Status409Conflict,
+            ArgumentException => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/problem+json";
+
+        await context.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = statusCode,
+            Title = "Error de solicitud",
+            Detail = exception?.Message ?? "Ocurrió un error inesperado.",
+            Type = $"https://httpstatuses.com/{statusCode}"
+        });
+    });
 });
 
-// --- 4. Endpoint WeatherForecast por defecto ---
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
+app.UseCors("AllowAngular");
+app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
-// --- Clases de soporte ---
-public class MongoDbSettings
-{
-    public string ConnectionString { get; set; } = string.Empty;
-    public string DatabaseName { get; set; } = string.Empty;
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

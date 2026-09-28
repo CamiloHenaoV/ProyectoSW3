@@ -16,7 +16,12 @@ public abstract class MongoRepository<T> : IRepository<T> where T : class
         => await Collection.Find(filter ?? FilterDefinition<T>.Empty).ToListAsync();
 
     public async Task<T?> GetByIdAsync(string id)
-        => await Collection.Find(Builders<T>.Filter.Eq("_id", ObjectId.Parse(id))).FirstOrDefaultAsync();
+    {
+        if (string.IsNullOrWhiteSpace(id) || !ObjectId.TryParse(id, out var objectId))
+            return null;
+
+        return await Collection.Find(Builders<T>.Filter.Eq("_id", objectId)).FirstOrDefaultAsync();
+    }
 
     public async Task<T?> FindOneAsync(FilterDefinition<T> filter)
         => await Collection.Find(filter).FirstOrDefaultAsync();
@@ -25,13 +30,19 @@ public abstract class MongoRepository<T> : IRepository<T> where T : class
 
     public async Task<bool> UpdateAsync(string id, T entity)
     {
-        var result = await Collection.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", ObjectId.Parse(id)), entity);
+        if (string.IsNullOrWhiteSpace(id) || !ObjectId.TryParse(id, out var objectId))
+            return false;
+
+        var result = await Collection.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", objectId), entity);
         return result.ModifiedCount > 0;
     }
 
     public async Task<bool> DeleteAsync(string id)
     {
-        var result = await Collection.DeleteOneAsync(Builders<T>.Filter.Eq("_id", ObjectId.Parse(id)));
+        if (string.IsNullOrWhiteSpace(id) || !ObjectId.TryParse(id, out var objectId))
+            return false;
+
+        var result = await Collection.DeleteOneAsync(Builders<T>.Filter.Eq("_id", objectId));
         return result.DeletedCount > 0;
     }
 }
