@@ -1,11 +1,15 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CitasMedicas.Api.Modules.Scheduling.Application.Dtos;
 using CitasMedicas.Api.Modules.Scheduling.Application.Interfaces;
+using CitasMedicas.Api.Shared.Security;
 
 namespace CitasMedicas.Api.Modules.Scheduling.Api;
 
 [ApiController]
 [Route("api/citas")]
+[Authorize]
 public class CitasController : ControllerBase
 {
     private readonly ICitaService _citaService;
@@ -15,9 +19,9 @@ public class CitasController : ControllerBase
         _citaService = citaService;
     }
 
-    // RF1: GET /api/citas?medicoId=...&fecha=2026-10-05
-    // Contexto: busqueda con filtros (medico + fecha) y resultados en tabla.
+    // RF1: solo agendadores y administradores ven el listado de citas de un medico
     [HttpGet]
+    [Authorize(Roles = $"{Roles.Agendador},{Roles.Administrador}")]
     public async Task<ActionResult<List<CitaListadoDto>>> Listar(
         [FromQuery] string medicoId, [FromQuery] DateTime fecha)
     {
@@ -27,25 +31,46 @@ public class CitasController : ControllerBase
         var citas = await _citaService.ListarPorMedicoYFechaAsync(medicoId, fecha);
         return Ok(citas);
     }
-    // Soporte de RF2: GET /api/citas/franjas-disponibles?medicoId=...&fecha=2026-10-05
-[HttpGet("franjas-disponibles")]
-public async Task<ActionResult<List<FranjaDisponibleDto>>> FranjasDisponibles(
-    [FromQuery] string medicoId, [FromQuery] DateTime fecha)
-{
-    var franjas = await _citaService.ObtenerFranjasDisponiblesAsync(medicoId, fecha);
-    return Ok(franjas);
-}
-[HttpPost("agendar")]
-public async Task<ActionResult<CitaListadoDto>> Agendar([FromBody] AgendarCitaRequest request)
-{
-    try
+
+    // Soporte de RF2: cualquier usuario autenticado puede consultar franjas
+    [HttpGet("franjas-disponibles")]
+    public async Task<ActionResult<List<FranjaDisponibleDto>>> FranjasDisponibles(
+        [FromQuery] string medicoId, [FromQuery] DateTime fecha)
     {
-        var cita = await _citaService.AgendarAsync(request);
-        return CreatedAtAction(nameof(Listar), new { medicoId = cita.MedicoId, fecha = cita.Fecha }, cita);
+        var franjas = await _citaService.ObtenerFranjasDisponiblesAsync(medicoId, fecha);
+        return Ok(franjas);
     }
-    catch (InvalidOperationException ex)
+
+    [HttpGet("mis-citas")]
+    [Authorize(Roles = Roles.Paciente)]
+    public async Task<ActionResult<List<CitaListadoDto>>> MisCitas()
     {
-        return Conflict(new { mensaje = ex.Message });
+        var pacienteId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(pacienteId))
+            return Unauthorized();
+
+        var citas = await _citaService.ListarPorPacienteAsync(pacienteId);
+        return Ok(citas);
     }
-}
+
+    // RF2: solo pacientes agendan; el paciente sale del token, no del body
+    [HttpPost("agendar")]
+    [Authorize(Roles = Roles.Paciente)]
+    public async Task<ActionResult<CitaListadoDto>> Agendar([FromBody] AgendarCitaRequest request)
+    {
+        var pacienteId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(pacienteId))
+            return Unauthorized();
+
+        try
+        {
+            var cita = await _citaService.AgendarAsync(pacienteId, request);
+            return CreatedAtAction(nameof(FranjasDisponibles),
+                new { medicoId = cita.MedicoId, fecha = cita.Fecha }, cita);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { mensaje = ex.Message });
+        }
+    }
 }

@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CitasMedicas.Api.Modules.Configuration.Application.Dtos;
 using CitasMedicas.Api.Modules.Configuration.Application.Interfaces;
+using CitasMedicas.Api.Shared.Security;
 
 namespace CitasMedicas.Api.Modules.Configuration.Api;
 
+// RF3: solo el administrador configura los parametros de agendamiento
 [ApiController]
 [Route("api/configuracion")]
+[Authorize(Roles = Roles.Administrador)]
 public class ConfiguracionController : ControllerBase
 {
     private readonly IConfiguracionService _service;

@@ -14,6 +14,10 @@ export class CitasService {
     return this.http.get<CitaListado[]>(this.baseUrl, { params });
   }
 
+  misCitas(): Observable<CitaListado[]> {
+    return this.http.get<CitaListado[]>(`${this.baseUrl}/mis-citas`);
+  }
+
   obtenerFranjasDisponibles(medicoId: string, fecha: string): Observable<FranjaDisponible[]> {
     const params = new HttpParams().set('medicoId', medicoId).set('fecha', fecha);
     return this.http.get<FranjaDisponible[]>(`${this.baseUrl}/franjas-disponibles`, { params });

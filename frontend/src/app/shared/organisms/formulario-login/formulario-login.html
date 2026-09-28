@@ -1,0 +1,5 @@
+<form class="form-login" (submit)="$event.preventDefault(); onSubmit()">
+  <app-form-field label="Correo electrónico" type="email" [value]="email" (valueChange)="email = $event" [required]="true" />
+  <app-form-field label="Contraseña" type="password" [value]="password" (valueChange)="password = $event" [required]="true" />
+  <app-button label="Iniciar sesión" type="submit" [disabled]="enviando()" />
+</form>

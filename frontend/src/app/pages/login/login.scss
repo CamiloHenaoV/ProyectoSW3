@@ -1,0 +1,41 @@
+.pagina--login {
+  display: grid;
+  justify-items: center;
+  gap: 2rem;
+}
+
+.page-header {
+  text-align: center;
+}
+
+.login-panel {
+  width: min(100%, 520px);
+  display: grid;
+  gap: 1rem;
+}
+
+.registro-link {
+  margin: 0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.registro-link a {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+}
+
+.mensaje {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.error {
+  color: var(--error);
+  border-color: rgba(161, 29, 51, 0.2);
+  background: rgba(161, 29, 51, 0.04);
+}

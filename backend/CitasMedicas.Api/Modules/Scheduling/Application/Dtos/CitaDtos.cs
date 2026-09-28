@@ -11,10 +11,12 @@ public record CitaListadoDto(
     string Estado,
     string? PacienteId
 );
+
+public record FranjaDisponibleDto(DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin);
+
+// El paciente NO viaja en el body: se toma del token JWT (evita agendar a nombre de otro)
 public record AgendarCitaRequest(
     string MedicoId,
-    string PacienteId,
     DateTime Fecha,
     TimeSpan HoraInicio
 );
-public record FranjaDisponibleDto(DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin);

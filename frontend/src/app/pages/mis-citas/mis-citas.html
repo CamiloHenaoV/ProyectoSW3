@@ -1,0 +1,12 @@
+<section class="pagina">
+  <header class="page-header">
+    <p class="eyebrow">Paciente</p>
+    <h2>Mis citas</h2>
+  </header>
+
+  @if (mensaje()) {
+    <p class="mensaje">{{ mensaje() }}</p>
+  }
+
+  <app-tabla-citas [citas]="citas()" />
+</section>

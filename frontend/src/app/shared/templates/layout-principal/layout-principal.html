@@ -6,9 +6,24 @@
     </div>
 
     <nav class="topbar__nav" aria-label="Navegación principal">
-      <a routerLink="/citas" routerLinkActive="is-active">Listado</a>
-      <a routerLink="/agendar" routerLinkActive="is-active">Agendar</a>
-      <a routerLink="/admin/configuracion" routerLinkActive="is-active">Administración</a>
+      @if (isAuthenticated()) {
+        @if (isPaciente()) {
+          <a routerLink="/agendar" routerLinkActive="is-active">Agendar</a>
+          <a routerLink="/mis-citas" routerLinkActive="is-active">Mis citas</a>
+        }
+
+        @if (isAgendador()) {
+          <a routerLink="/citas" routerLinkActive="is-active">Listado</a>
+        }
+
+        @if (isAdmin()) {
+          <a routerLink="/admin/configuracion" routerLinkActive="is-active">Administración</a>
+        }
+
+        <button type="button" class="topbar__logout" (click)="logout()">Cerrar sesión</button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="is-active">Iniciar sesión</a>
+      }
     </nav>
   </div>
 </header>

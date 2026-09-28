@@ -1,27 +1,27 @@
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { CitasService } from '../../core/services/citas.service';
 import { MedicosService } from '../../core/services/medicos.service';
-import { PacientesService } from '../../core/services/pacientes.service';
+import { AuthService } from '../../core/services/auth.service';
 import { FranjaDisponible, Medico } from '../../core/models/cita.model';
-import { RegistroPacienteRequest } from '../../core/models/paciente.model';
-import { FormularioRegistroPaciente } from '../../shared/organisms/formulario-registro-paciente/formulario-registro-paciente';
 import { SelectorFranjas } from '../../shared/organisms/selector-franjas/selector-franjas';
 import { SelectField, SelectOption } from '../../shared/atoms/select-field/select-field';
 import { InputField } from '../../shared/atoms/input-field/input-field';
 import { Button } from '../../shared/atoms/button/button';
 
 // RF2: Yo como paciente necesito agendar una cita mediante la web.
-// Flujo: 1) registrar paciente 2) elegir medico+fecha 3) elegir franja 4) confirmar
+// Flujo: elegir médico + fecha + franja + confirmar.
 @Component({
   selector: 'app-agendar-cita',
-  imports: [FormularioRegistroPaciente, SelectorFranjas, SelectField, InputField, Button],
+  imports: [SelectorFranjas, SelectField, InputField, Button],
   templateUrl: './agendar-cita.html',
   styleUrl: './agendar-cita.scss'
 })
 export class AgendarCita {
   private citasService = inject(CitasService);
   private medicosService = inject(MedicosService);
-  private pacientesService = inject(PacientesService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   paso = signal<1 | 2 | 3>(1);
 
@@ -36,22 +36,22 @@ export class AgendarCita {
   mensajeEsError = signal(false);
 
   constructor() {
-    this.medicosService.listar().subscribe((medicos) => this.medicos.set(medicos));
+    const usuario = this.authService.getUsuario();
+    if (!usuario) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
+    this.pacienteId.set(usuario.id);
+
+    this.medicosService.listar().subscribe({
+      next: (medicos) => this.medicos.set(medicos),
+      error: () => this.mostrarError('No se pudieron cargar los médicos. Intenta nuevamente.')
+    });
   }
 
   get opcionesMedicos(): SelectOption[] {
     return this.medicos().map((m) => ({ value: m.id, label: `${m.nombre} - ${m.especialidad}` }));
-  }
-
-  registrarPaciente(request: RegistroPacienteRequest): void {
-    this.pacientesService.registrar(request).subscribe({
-      next: (paciente) => {
-        this.pacienteId.set(paciente.id);
-        this.paso.set(2);
-        this.mensaje.set('');
-      },
-      error: (err) => this.mostrarError(err?.error?.mensaje ?? 'No fue posible completar el registro.')
-    });
   }
 
   buscarFranjas(): void {

@@ -8,40 +8,31 @@
     <p [class.error]="mensajeEsError()">{{ mensaje() }}</p>
   }
 
-  @if (paso() === 1) {
-    <div class="selection-block">
-      <h3>1. Regístrate</h3>
-      <app-formulario-registro-paciente (registrar)="registrarPaciente($event)" />
+  <div class="selection-block">
+    <h3>1. Elige médico/terapista, fecha y horario</h3>
+    <div class="seleccion">
+      <app-select-field
+        placeholder="Médico/Terapista"
+        [options]="opcionesMedicos"
+        [value]="medicoId()"
+        (valueChange)="medicoId.set($event)"
+      />
+      <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
+      <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
     </div>
-  }
+  </div>
 
-  @if (paso() === 2) {
-    <div class="selection-block">
-      <h3>2. Elige médico/terapista, fecha y horario</h3>
-      <div class="seleccion">
-        <app-select-field
-          placeholder="Médico/Terapista"
-          [options]="opcionesMedicos"
-          [value]="medicoId()"
-          (valueChange)="medicoId.set($event)"
-        />
-        <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
-        <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
-      </div>
-    </div>
+  <app-selector-franjas
+    [franjas]="franjas()"
+    [seleccionada]="franjaSeleccionada()"
+    (seleccionar)="franjaSeleccionada.set($event)"
+  />
 
-    <app-selector-franjas
-      [franjas]="franjas()"
-      [seleccionada]="franjaSeleccionada()"
-      (seleccionar)="franjaSeleccionada.set($event)"
-    />
-
-    <app-button
-      label="Confirmar cita"
-      [disabled]="!franjaSeleccionada()"
-      (clicked)="confirmarCita()"
-    />
-  }
+  <app-button
+    label="Confirmar cita"
+    [disabled]="!franjaSeleccionada()"
+    (clicked)="confirmarCita()"
+  />
 
   @if (paso() === 3) {
     <div class="confirmacion">

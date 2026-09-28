@@ -1,0 +1,18 @@
+<section class="pagina pagina--login">
+  <header class="page-header">
+    <p class="eyebrow">Acceso</p>
+    <h2>Bienvenido a Citas Médicas</h2>
+  </header>
+
+  <div class="login-panel">
+    <app-formulario-login [enviando]="cargando()" (login)="onLogin($event)" />
+
+    <p class="registro-link">
+      ¿No tienes cuenta? <a routerLink="/registro">Regístrate</a>
+    </p>
+
+    @if (error()) {
+      <p class="mensaje error">{{ error() }}</p>
+    }
+  </div>
+</section>

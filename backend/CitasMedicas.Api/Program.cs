@@ -3,6 +3,11 @@ using CitasMedicas.Api.Modules.Scheduling;
 using CitasMedicas.Api.Shared.Infrastructure;
 using CitasMedicas.Api.Modules.Configuration;
 using CitasMedicas.Api.Modules.Patients;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using CitasMedicas.Api.Shared.Security;
+
 var builder = WebApplication.CreateBuilder(args);
 CitasMedicas.Api.Shared.Infrastructure.MongoConventions.Registrar();
 // --- 1. Configuración de MongoDB ---
@@ -28,6 +33,32 @@ builder.Services.AddScoped<IMongoContext, MongoContext>();
 builder.Services.AddSchedulingModule();
 builder.Services.AddConfigurationModule();
 builder.Services.AddPatientsModule();
+// --- Autenticación JWT ---
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
+    throw new InvalidOperationException(
+        "Falta JwtSettings:Key (mínimo 32 caracteres). Ejecuta: dotnet user-secrets set \"JwtSettings:Key\" \"<clave>\"");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 // --- 2. Servicios OpenAPI y CORS ---
@@ -52,7 +83,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAngular");
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
+app.UseAuthorization();
 // --- 3. Endpoint de prueba de conexión a MongoDB Atlas ---
 app.MapGet("/api/test-db", async (IMongoDatabase database) =>
 {

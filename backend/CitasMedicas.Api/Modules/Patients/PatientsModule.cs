@@ -10,6 +10,7 @@ public static class PatientsModule
     {
         services.AddScoped<IPacienteRepository, PacienteRepository>();
         services.AddScoped<IPacienteService, PacienteService>();
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 }

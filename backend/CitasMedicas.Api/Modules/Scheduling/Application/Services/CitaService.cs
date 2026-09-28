@@ -47,6 +47,35 @@ public class CitaService : ICitaService
             .ToList();
     }
 
+    public async Task<List<CitaListadoDto>> ListarPorPacienteAsync(string pacienteId)
+    {
+        var citas = await _citaRepository.GetAllAsync(Builders<Cita>.Filter.Eq(c => c.PacienteId, pacienteId));
+
+        var medicosPorId = new Dictionary<string, string>();
+        foreach (var cita in citas)
+        {
+            if (!medicosPorId.ContainsKey(cita.MedicoId))
+            {
+                var medico = await _medicoRepository.GetByIdAsync(cita.MedicoId);
+                medicosPorId[cita.MedicoId] = medico?.Nombre ?? "Desconocido";
+            }
+        }
+
+        return citas
+            .OrderByDescending(c => c.Fecha)
+            .ThenBy(c => c.HoraInicio)
+            .Select(c => new CitaListadoDto(
+                c.Id,
+                c.MedicoId,
+                medicosPorId.TryGetValue(c.MedicoId, out var nombre) ? nombre : "Desconocido",
+                c.Fecha,
+                c.HoraInicio,
+                c.HoraFin,
+                c.Estado.ToString(),
+                c.PacienteId))
+            .ToList();
+    }
+
     public async Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha)
     {
         var configuracion = await _configuracionService.ObtenerPorMedicoAsync(medicoId);
@@ -70,29 +99,31 @@ public class CitaService : ICitaService
             .Select(f => new FranjaDisponibleDto(fechaNormalizada, f.Inicio, f.Fin))
             .ToList();
     }
-    public async Task<CitaListadoDto> AgendarAsync(AgendarCitaRequest request)
-{
-    var medico = await _medicoRepository.GetByIdAsync(request.MedicoId)
-        ?? throw new InvalidOperationException("El medico/terapista no existe.");
 
-    var franjas = await ObtenerFranjasDisponiblesAsync(request.MedicoId, request.Fecha);
-    var franja = franjas.FirstOrDefault(f => f.HoraInicio == request.HoraInicio)
-        ?? throw new InvalidOperationException("La franja seleccionada ya no esta disponible.");
-
-    var cita = new Cita
+    // RF2: el pacienteId viene del token (lo resuelve el controlador), no del body
+    public async Task<CitaListadoDto> AgendarAsync(string pacienteId, AgendarCitaRequest request)
     {
-        MedicoId = request.MedicoId,
-        Fecha = DateTime.SpecifyKind(request.Fecha.Date, DateTimeKind.Utc),
-        HoraInicio = franja.HoraInicio,
-        HoraFin = franja.HoraFin,
-        Estado = EstadoCita.Agendada,
-        PacienteId = request.PacienteId
-    };
+        var medico = await _medicoRepository.GetByIdAsync(request.MedicoId)
+            ?? throw new InvalidOperationException("El medico/terapista no existe.");
 
-    await _citaRepository.CreateAsync(cita);
+        var franjas = await ObtenerFranjasDisponiblesAsync(request.MedicoId, request.Fecha);
+        var franja = franjas.FirstOrDefault(f => f.HoraInicio == request.HoraInicio)
+            ?? throw new InvalidOperationException("La franja seleccionada ya no esta disponible.");
 
-    return new CitaListadoDto(
-        cita.Id, cita.MedicoId, medico.Nombre, cita.Fecha,
-        cita.HoraInicio, cita.HoraFin, cita.Estado.ToString(), cita.PacienteId);
-}
+        var cita = new Cita
+        {
+            MedicoId = request.MedicoId,
+            Fecha = DateTime.SpecifyKind(request.Fecha.Date, DateTimeKind.Utc),
+            HoraInicio = franja.HoraInicio,
+            HoraFin = franja.HoraFin,
+            Estado = EstadoCita.Agendada,
+            PacienteId = pacienteId
+        };
+
+        await _citaRepository.CreateAsync(cita);
+
+        return new CitaListadoDto(
+            cita.Id, cita.MedicoId, medico.Nombre, cita.Fecha,
+            cita.HoraInicio, cita.HoraFin, cita.Estado.ToString(), cita.PacienteId);
+    }
 }

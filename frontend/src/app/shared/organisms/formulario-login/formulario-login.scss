@@ -1,0 +1,9 @@
+.form-login {
+  display: grid;
+  gap: 1rem;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-soft);
+}

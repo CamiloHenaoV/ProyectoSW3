@@ -1,6 +1,9 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CitasMedicas.Api.Modules.Patients.Application.Dtos;
 using CitasMedicas.Api.Modules.Patients.Application.Interfaces;
+using CitasMedicas.Api.Shared.Security;
 
 namespace CitasMedicas.Api.Modules.Patients.Api;
 
@@ -16,6 +19,7 @@ public class PacientesController : ControllerBase
     }
 
     [HttpPost("registro")]
+    [AllowAnonymous]
     public async Task<ActionResult<PacienteDto>> Registrar([FromBody] RegistroPacienteRequest request)
     {
         try
@@ -29,9 +33,15 @@ public class PacientesController : ControllerBase
         }
     }
 
+    // Un paciente solo puede ver su propio perfil; el administrador puede ver cualquiera.
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<PacienteDto>> ObtenerPorId(string id)
     {
+        var esPropio = User.FindFirstValue(ClaimTypes.NameIdentifier) == id;
+        if (!esPropio && !User.IsInRole(Roles.Administrador))
+            return Forbid();
+
         var paciente = await _service.ObtenerPorIdAsync(id);
         return paciente is null ? NotFound() : Ok(paciente);
     }
