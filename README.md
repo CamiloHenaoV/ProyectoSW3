@@ -15,7 +15,7 @@ Proyecto del curso Ingeniería de Software III — Universidad del Cauca, Facult
 5. [Cómo ejecutar el proyecto](#5-cómo-ejecutar-el-proyecto)
 6. [API REST](#6-api-rest)
 7. [Release 1 — Primer corte](#7-release-1--primer-corte)
-8. [Equipo y enlaces](#8-equipo-y-enlaces)
+
 
 ---
 
