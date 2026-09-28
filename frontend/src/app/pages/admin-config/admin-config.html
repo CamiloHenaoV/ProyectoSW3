@@ -1,12 +1,17 @@
 <section class="pagina">
-  <h2>Configuración de agendamiento (Administrador)</h2>
+  <header class="page-header">
+    <p class="eyebrow">Configuración</p>
+    <h2>Agendamiento del equipo</h2>
+  </header>
 
-  <app-select-field
-    placeholder="Médico/Terapista"
-    [options]="opcionesMedicos"
-    [value]="medicoId()"
-    (valueChange)="onMedicoSeleccionado($event)"
-  />
+  <div class="selection-panel">
+    <app-select-field
+      placeholder="Médico/Terapista"
+      [options]="opcionesMedicos"
+      [value]="medicoId()"
+      (valueChange)="onMedicoSeleccionado($event)"
+    />
+  </div>
 
   @if (medicoId()) {
     <app-formulario-configuracion

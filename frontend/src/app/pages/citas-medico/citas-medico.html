@@ -1,21 +1,36 @@
-<section class="pagina">
-  <h2>Listado de citas por médico/terapista y fecha</h2>
+<section class="pagina pagina--directory">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Directorio médico</p>
+      <h2>Agenda con especialistas</h2>
+    </div>
+    <p class="page-intro">
+      Selecciona un profesional y una fecha para revisar la disponibilidad de la agenda con un enfoque claro y contemporáneo.
+    </p>
+  </header>
 
-  <app-filtro-fecha-medico
-    [medicos]="medicos()"
-    [medicoId]="medicoId()"
-    [fecha]="fecha()"
-    (medicoIdChange)="medicoId.set($event)"
-    (fechaChange)="fecha.set($event)"
-    (buscar)="buscar()"
-  />
+  <div class="toolbar-panel">
+    <app-filtro-fecha-medico
+      [medicos]="medicos()"
+      [medicoId]="medicoId()"
+      [fecha]="fecha()"
+      (medicoIdChange)="medicoId.set($event)"
+      (fechaChange)="fecha.set($event)"
+      (buscar)="buscar()"
+    />
+  </div>
 
   @if (mensajeError()) {
     <p class="error">{{ mensajeError() }}</p>
   }
   @if (cargando()) {
-    <p>Cargando...</p>
+    <p class="status">Cargando...</p>
   }
+
+  <div class="results-meta">
+    <span>Mostrando</span>
+    <strong>{{ citas().length }} cita(s)</strong>
+  </div>
 
   <app-tabla-citas [citas]="citas()" />
 </section>

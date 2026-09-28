@@ -1,26 +1,33 @@
 <section class="pagina">
-  <h2>Agendar una cita</h2>
+  <header class="page-header">
+    <p class="eyebrow">Agendamiento</p>
+    <h2>Reserva tu consulta</h2>
+  </header>
 
   @if (mensaje()) {
     <p [class.error]="mensajeEsError()">{{ mensaje() }}</p>
   }
 
   @if (paso() === 1) {
-    <h3>1. Regístrate</h3>
-    <app-formulario-registro-paciente (registrar)="registrarPaciente($event)" />
+    <div class="selection-block">
+      <h3>1. Regístrate</h3>
+      <app-formulario-registro-paciente (registrar)="registrarPaciente($event)" />
+    </div>
   }
 
   @if (paso() === 2) {
-    <h3>2. Elige médico/terapista, fecha y horario</h3>
-    <div class="seleccion">
-      <app-select-field
-        placeholder="Médico/Terapista"
-        [options]="opcionesMedicos"
-        [value]="medicoId()"
-        (valueChange)="medicoId.set($event)"
-      />
-      <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
-      <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
+    <div class="selection-block">
+      <h3>2. Elige médico/terapista, fecha y horario</h3>
+      <div class="seleccion">
+        <app-select-field
+          placeholder="Médico/Terapista"
+          [options]="opcionesMedicos"
+          [value]="medicoId()"
+          (valueChange)="medicoId.set($event)"
+        />
+        <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
+        <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
+      </div>
     </div>
 
     <app-selector-franjas

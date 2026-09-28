@@ -5,19 +5,33 @@
   max-width: 760px;
 }
 
-.pagina h2 {
-  font-size: clamp(2.5rem, 5vw, 4.25rem);
-  line-height: 0.9;
+.page-header {
+  display: grid;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
 }
 
-.pagina h3 {
-  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
-  line-height: 1;
+.eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.page-header h2 {
+  font-size: clamp(2.8rem, 5vw, 4.2rem);
+  line-height: 0.9;
 }
 
 .seleccion {
   display: grid;
   gap: 0.9rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  padding: 1.15rem;
 }
 
 .error {
@@ -28,7 +42,7 @@
 .confirmacion {
   display: grid;
   gap: 0.5rem;
-  padding-top: 0.25rem;
+  padding-top: 0.5rem;
   border-top: 1px solid var(--line);
   color: var(--success);
 }

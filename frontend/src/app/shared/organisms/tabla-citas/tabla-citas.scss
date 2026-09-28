@@ -1,32 +1,38 @@
 .tabla-citas {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.12);
-  border-top: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--line);
 }
 
 .tabla-citas th,
 .tabla-citas td {
-  padding: 0.9rem 0.8rem;
+  padding: 1rem 0.9rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 
 .tabla-citas th {
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
   font-weight: 700;
+  background: rgba(15, 118, 110, 0.04);
+}
+
+.tabla-citas tr:last-child td {
+  border-bottom: none;
 }
 
 .total {
-  margin-top: 0.8rem;
+  margin-top: 0.9rem;
   font-weight: 700;
   color: var(--ink);
 }
 
 .vacio {
   color: var(--ink-soft);
+  padding: 1rem 0;
 }
