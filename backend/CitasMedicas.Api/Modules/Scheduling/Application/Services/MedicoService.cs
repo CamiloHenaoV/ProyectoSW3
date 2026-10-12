@@ -13,9 +13,28 @@ public class MedicoService : IMedicoService
         _repository = repository;
     }
 
-    public async Task<List<MedicoDto>> ListarAsync()
+    public async Task<List<MedicoDto>> ListarAsync(bool incluirInactivos = false)
     {
         var medicos = await _repository.GetAllAsync();
-        return medicos.Select(m => new MedicoDto(m.Id, m.Nombre, m.Especialidad)).ToList();
+        return medicos
+            .Where(m => incluirInactivos || m.Activo)
+            .Select(m => new MedicoDto(m.Id, m.Nombre, m.Especialidad, m.Activo))
+            .ToList();
+    }
+
+    public async Task<MedicoDto?> ActualizarEstadoAsync(string medicoId, bool activo)
+    {
+        var medico = await _repository.GetByIdAsync(medicoId);
+        if (medico is null)
+            return null;
+
+        if (medico.Activo != activo)
+        {
+            medico.Activo = activo;
+            if (!await _repository.UpdateAsync(medico.Id, medico))
+                return null;
+        }
+
+        return new MedicoDto(medico.Id, medico.Nombre, medico.Especialidad, medico.Activo);
     }
 }

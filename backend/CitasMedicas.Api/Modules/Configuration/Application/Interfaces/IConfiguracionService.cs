@@ -6,5 +6,7 @@ namespace CitasMedicas.Api.Modules.Configuration.Application.Interfaces;
 public interface IConfiguracionService
 {
     Task<ConfiguracionMedicoDto?> ObtenerPorMedicoAsync(string medicoId);
+    Task<List<ConfiguracionMedicoDto>> ListarAsync();
     Task<ConfiguracionMedicoDto> GuardarAsync(GuardarConfiguracionRequest request);
+    Task<bool> EliminarAsync(string medicoId);
 }

@@ -32,5 +32,9 @@
     <strong>{{ citas().length }} cita(s)</strong>
   </div>
 
-  <app-tabla-citas [citas]="citas()" />
+  <app-tabla-citas
+    [citas]="citas()"
+    [mostrarEliminar]="esAdministrador()"
+    (eliminarCita)="eliminar($event)"
+  />
 </section>

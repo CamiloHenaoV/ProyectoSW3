@@ -54,13 +54,13 @@ describe('AuthService', () => {
     expect(localStorage.getItem('citas_medicas_user')).toBe(JSON.stringify(usuario));
   });
 
-  it('should invalidate an expired token and clear the session', () => {
+  it('should invalidate an expired token without mutating the session during validation', () => {
     localStorage.setItem('citas_medicas_token', createJwtToken(Math.floor(Date.now() / 1000) - 30));
     localStorage.setItem('citas_medicas_user', JSON.stringify(usuario));
 
     expect(service.getToken()).toBeNull();
-    expect(localStorage.getItem('citas_medicas_token')).toBeNull();
-    expect(localStorage.getItem('citas_medicas_user')).toBeNull();
+    expect(localStorage.getItem('citas_medicas_token')).toBe(createJwtToken(Math.floor(Date.now() / 1000) - 30));
+    expect(localStorage.getItem('citas_medicas_user')).toBe(JSON.stringify(usuario));
   });
 
   it('should return the correct route for each user role', () => {

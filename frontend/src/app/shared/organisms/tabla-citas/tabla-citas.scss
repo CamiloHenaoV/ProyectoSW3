@@ -26,6 +26,22 @@
   border-bottom: none;
 }
 
+.tabla-citas .fila-cancelada {
+  background: #fff7f7;
+  color: #7f1d1d;
+}
+
+.fila-cancelada td {
+  opacity: 0.82;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .total {
   margin-top: 0.9rem;
   font-weight: 700;

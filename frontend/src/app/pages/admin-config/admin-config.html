@@ -13,6 +13,38 @@
     />
   </div>
 
+  <section class="configuraciones">
+    <h3>Configuraciones existentes</h3>
+    @if (configuraciones().length) {
+      <div class="tabla-configuraciones">
+        @for (config of configuraciones(); track config.id) {
+          <article class="configuracion-item">
+            <div>
+              <strong>{{ nombreMedico(config.medicoId) }}</strong>
+              <span class="estado-medico" [class.estado-medico--inactivo]="!estaActivo(config.medicoId)">
+                {{ estaActivo(config.medicoId) ? 'Activo' : 'Inactivo' }}
+              </span>
+              <p>
+                {{ config.diasAtencion.length }} día(s), {{ config.horaInicio.substring(0, 5) }}–{{ config.horaFin.substring(0, 5) }},
+                cada {{ config.intervaloMinutos }} min, {{ config.semanasHabilitadas }} semana(s)
+              </p>
+            </div>
+            <div class="acciones-configuracion">
+              <app-button label="Editar" variant="secondary" (clicked)="editar(config)" />
+              <app-button
+                [label]="estaActivo(config.medicoId) ? 'Desactivar' : 'Activar'"
+                [variant]="estaActivo(config.medicoId) ? 'danger' : 'primary'"
+                (clicked)="cambiarEstado(config)"
+              />
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p>No hay configuraciones registradas.</p>
+    }
+  </section>
+
   @if (medicoId()) {
     <app-formulario-configuracion
       [medicoId]="medicoId()"

@@ -8,5 +8,59 @@
     <p class="mensaje">{{ mensaje() }}</p>
   }
 
-  <app-tabla-citas [citas]="citas()" />
+  <app-tabla-citas
+    [citas]="citas()"
+    [mostrarCancelar]="true"
+    [mostrarReagendar]="true"
+    [vistaPaciente]="true"
+    (cancelarCita)="cancelar($event)"
+    (reagendarCita)="iniciarReagendamiento($event)"
+  />
+
+  @if (citaReagendando(); as cita) {
+    <section class="reagendar-panel">
+      <div>
+        <h3>Reagendar cita con {{ cita.nombreMedico }}</h3>
+        <p>Selecciona una fecha futura y consulta los horarios disponibles.</p>
+      </div>
+      <div class="reagendar-controles">
+        <label>
+          Nueva fecha
+          <app-input-field
+            type="date"
+            [min]="fechaReagendar()"
+            [value]="fechaReagendar()"
+            (valueChange)="fechaReagendar.set($event); franjas.set([]); franjaSeleccionada.set(null)"
+          />
+        </label>
+        <app-button
+          label="Ver horarios disponibles"
+          [disabled]="cargandoFranjas()"
+          (clicked)="buscarFranjas()"
+        />
+      </div>
+
+      @if (cargandoFranjas()) {
+        <p>Consultando horarios disponibles...</p>
+      }
+
+      @if (franjas().length) {
+        <app-selector-franjas
+          [franjas]="franjas()"
+          [seleccionada]="franjaSeleccionada()"
+          (seleccionar)="franjaSeleccionada.set($event)"
+        />
+        <div class="acciones-reagendar">
+          <app-button
+            label="Confirmar nuevo horario"
+            [disabled]="!franjaSeleccionada()"
+            (clicked)="confirmarReagendamiento()"
+          />
+          <app-button label="Volver" variant="secondary" (clicked)="cancelarReagendamiento()" />
+        </div>
+      } @else {
+        <app-button label="Volver" variant="secondary" (clicked)="cancelarReagendamiento()" />
+      }
+    </section>
+  }
 </section>

@@ -15,4 +15,7 @@ public class Medico
 
     [BsonElement("Especialidad")]
     public string Especialidad { get; set; } = string.Empty; // ej: Medicina General, Terapia Fisica
+
+    [BsonElement("Activo")]
+    public bool Activo { get; set; } = true;
 }

@@ -30,3 +30,50 @@
   color: var(--success);
   font-weight: 700;
 }
+
+.configuraciones {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.configuraciones h3 {
+  margin: 0;
+}
+
+.tabla-configuraciones {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.configuracion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.configuracion-item p {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+}
+
+.estado-medico {
+  display: inline-block;
+  margin-left: 0.65rem;
+  color: var(--success);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.estado-medico--inactivo {
+  color: var(--ink-soft);
+}
+
+.acciones-configuracion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

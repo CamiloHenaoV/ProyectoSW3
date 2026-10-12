@@ -25,6 +25,12 @@ public class ConfiguracionService : IConfiguracionService
         return config is null ? null : MapToDto(config);
     }
 
+    public async Task<List<ConfiguracionMedicoDto>> ListarAsync()
+    {
+        var configuraciones = await _repository.GetAllAsync();
+        return configuraciones.Select(MapToDto).ToList();
+    }
+
     public async Task<ConfiguracionMedicoDto> GuardarAsync(GuardarConfiguracionRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.MedicoId))
@@ -59,6 +65,17 @@ public class ConfiguracionService : IConfiguracionService
             await _repository.UpdateAsync(entidad.Id, entidad);
 
         return MapToDto(entidad);
+    }
+
+    public async Task<bool> EliminarAsync(string medicoId)
+    {
+        if (string.IsNullOrWhiteSpace(medicoId))
+            return false;
+
+        var configuracion = await _repository.FindOneAsync(
+            Builders<ConfiguracionMedico>.Filter.Eq(c => c.MedicoId, medicoId));
+
+        return configuracion is not null && await _repository.DeleteAsync(configuracion.Id);
     }
 
     private static ConfiguracionMedicoDto MapToDto(ConfiguracionMedico c) => new(

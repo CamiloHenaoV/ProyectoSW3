@@ -38,11 +38,9 @@ export class AuthService {
       const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
       const exp = Number(payload.exp ?? 0) * 1000;
       if (!Number.isFinite(exp) || Date.now() >= exp) {
-        this.logout();
         return null;
       }
     } catch {
-      this.logout();
       return null;
     }
 

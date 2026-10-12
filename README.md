@@ -240,13 +240,20 @@ Todas las rutas cuelgan de /api. Salvo las rutas públicas, requieren el encabez
 | POST | /auth/login | Público | Inicio de sesión y emisión del JWT |
 | POST | /pacientes/registro | Público | Registro de un paciente |
 | GET | /pacientes/{id} | Autenticado | Consulta de datos del paciente |
-| GET | /medicos | Autenticado | Lista de médicos y terapistas |
+| GET | /medicos | Autenticado | Lista de médicos y terapistas activos |
+| GET | /medicos?incluirInactivos=true | Administrador | Lista todos los médicos y terapistas |
+| PUT | /medicos/{medicoId}/estado | Administrador | Activa o desactiva un médico o terapista |
 | GET | /citas?medicoId=&fecha= | Agendador, Administrador | Listado de citas por médico y fecha |
 | GET | /citas/franjas-disponibles?medicoId=&fecha= | Autenticado | Cálculo de franjas disponibles |
 | POST | /citas/agendar | Paciente | Registro de una cita |
 | GET | /citas/mis-citas | Paciente | Citas del paciente autenticado |
+| PUT | /citas/{id}/reagendar | Paciente (propia) | Cambia la fecha y la franja de una cita agendada |
+| PUT | /citas/{id}/cancelar | Paciente (propia), Agendador, Administrador | Cancela una cita que no esté cancelada ni atendida |
+| DELETE | /citas/{id} | Administrador | Elimina una cita |
+| GET | /configuracion | Administrador | Lista todas las configuraciones de médicos |
 | GET | /configuracion/{medicoId} | Administrador | Consulta de configuración |
 | PUT | /configuracion | Administrador | Creación o actualización de configuración |
+| DELETE | /configuracion/{medicoId} | Administrador | Elimina la configuración de un médico |
 
 Códigos de respuesta habituales: 200/201 para éxito, 400 para datos inválidos, 401 para sesión ausente o token vencido, 403 para permisos insuficientes, 404 para recursos no encontrados y 409 para reglas de negocio incumplidas.
 

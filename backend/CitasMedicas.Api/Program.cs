@@ -1,6 +1,8 @@
 using System.Text;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -35,7 +37,6 @@ builder.Services.AddScoped<IMongoContext, MongoContext>();
 builder.Services.AddSchedulingModule();
 builder.Services.AddConfigurationModule();
 builder.Services.AddPatientsModule();
-
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
@@ -61,7 +62,14 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Roles.Paciente, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(ClaimTypes.Role, Roles.Paciente);
+    });
+});
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddRateLimiter(options =>
@@ -107,6 +115,8 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         {
             InvalidOperationException => StatusCodes.Status409Conflict,
             ArgumentException => StatusCodes.Status400BadRequest,
+            UnauthorizedAccessException => StatusCodes.Status403Forbidden,
+            TimeoutException => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status500InternalServerError
         };
 
@@ -116,8 +126,12 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         await context.Response.WriteAsJsonAsync(new ProblemDetails
         {
             Status = statusCode,
-            Title = "Error de solicitud",
-            Detail = exception?.Message ?? "Ocurrió un error inesperado.",
+            Title = statusCode == StatusCodes.Status503ServiceUnavailable
+                ? "Servicio temporalmente no disponible"
+                : "Error de solicitud",
+            Detail = statusCode == StatusCodes.Status503ServiceUnavailable
+                ? "El servicio de base de datos no está disponible temporalmente."
+                : exception?.Message ?? "Ocurrió un error inesperado.",
             Type = $"https://httpstatuses.com/{statusCode}"
         });
     });
@@ -128,5 +142,6 @@ app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

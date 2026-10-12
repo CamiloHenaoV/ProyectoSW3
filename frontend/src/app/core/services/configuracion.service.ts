@@ -9,11 +9,19 @@ export class ConfiguracionService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/configuracion`;
 
+  listar(): Observable<ConfiguracionMedico[]> {
+    return this.http.get<ConfiguracionMedico[]>(this.baseUrl);
+  }
+
   obtenerPorMedico(medicoId: string): Observable<ConfiguracionMedico> {
     return this.http.get<ConfiguracionMedico>(`${this.baseUrl}/${medicoId}`);
   }
 
   guardar(request: GuardarConfiguracionRequest): Observable<ConfiguracionMedico> {
     return this.http.put<ConfiguracionMedico>(this.baseUrl, request);
+  }
+
+  eliminar(medicoId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${medicoId}`);
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CitasService } from '../../core/services/citas.service';
 import { MedicosService } from '../../core/services/medicos.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CitaListado, Medico } from '../../core/models/cita.model';
 import { FiltroFechaMedico } from '../../shared/molecules/filtro-fecha-medico/filtro-fecha-medico';
 import { TablaCitas } from '../../shared/organisms/tabla-citas/tabla-citas';
@@ -16,6 +17,7 @@ import { TablaCitas } from '../../shared/organisms/tabla-citas/tabla-citas';
 export class CitasMedico implements OnInit {
   private citasService = inject(CitasService);
   private medicosService = inject(MedicosService);
+  private authService = inject(AuthService);
 
   medicos = signal<Medico[]>([]);
   citas = signal<CitaListado[]>([]);
@@ -23,8 +25,10 @@ export class CitasMedico implements OnInit {
   fecha = signal(new Date().toISOString().substring(0, 10));
   mensajeError = signal('');
   cargando = signal(false);
+  esAdministrador = signal(false);
 
   ngOnInit(): void {
+    this.esAdministrador.set(this.authService.hasRole('Administrador'));
     this.medicosService.listar().subscribe({
       next: (medicos) => this.medicos.set(medicos),
       error: () => this.mensajeError.set('No fue posible cargar el listado de médicos/terapistas.')
@@ -48,6 +52,17 @@ export class CitasMedico implements OnInit {
         this.mensajeError.set('Ocurrió un error al consultar las citas.');
         this.cargando.set(false);
       }
+    });
+  }
+
+  eliminar(citaId: string): void {
+    if (!window.confirm('¿Confirmas que deseas eliminar esta cita?')) {
+      return;
+    }
+
+    this.citasService.eliminar(citaId).subscribe({
+      next: () => this.buscar(),
+      error: () => this.mensajeError.set('No fue posible eliminar la cita.')
     });
   }
 }
