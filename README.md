@@ -181,23 +181,17 @@ Los secretos no se guardan en el repositorio; cada entorno define sus valores co
 ```bash
 cd backend/CitasMedicas.Api
 
-dotnet user-secrets set "MongoDbSettings:ConnectionString" "mongodb://localhost:27017"
-dotnet user-secrets set "JwtSettings:Key" "<clave-generada>"
+dotnet user-secrets set "MongoDbSettings:ConnectionString" "<URI de MongoDB Atlas>"
+dotnet user-secrets set "Keycloak:ServiceClientSecret" "<client-secret de piedrazul-api>"
 
 dotnet run --launch-profile http
 ```
 
-Para generar una clave aleatoria:
+En desarrollo, la API valida los JWT con el realm Keycloak `piedrazul` (`http://localhost:8080/realms/piedrazul`) y la audiencia `piedrazul-api`, valores configurados en `appsettings.Development.json`. Por eso no se requiere una clave JWT local cuando se usa el frontend configurado para Keycloak.
 
-```bash
-# Linux / macOS / Git Bash
-openssl rand -base64 48
-```
+El secreto se obtiene en la consola de Keycloak, en el cliente `piedrazul-api` → **Credentials**. El servicio de registro lo usa del lado del backend para crear la cuenta y asignarle el rol `Paciente`; no lo configures en Angular ni lo guardes en el repositorio.
 
-```powershell
-# Windows PowerShell
-[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
-```
+Si `Keycloak:Authority` no está configurado, la API usa el esquema JWT local del primer corte y requiere `JwtSettings:Key` de al menos 32 caracteres.
 
 La API queda en http://localhost:5039. La documentación OpenAPI se expose en http://localhost:5039/openapi/v1.json.
 
@@ -383,4 +377,3 @@ Resultado actual verificado: 4 pruebas del backend ejecutándose correctamente c
 
 - [frontend/README.md](frontend/README.md): ejecución, arquitectura del frontend, patrones GoF, escenarios de calidad de seguridad y pruebas.
 - [docs/contratos-api-segundo-corte.md](docs/contratos-api-segundo-corte.md): endpoints nuevos (`/api/citas/historial`, `/api/pacientes/buscar`), cambios de roles y validación del token de Keycloak en ASP.NET Core.
-

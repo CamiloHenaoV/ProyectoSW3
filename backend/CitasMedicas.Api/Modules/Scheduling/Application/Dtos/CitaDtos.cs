@@ -13,6 +13,7 @@ public record CitaListadoDto(
     TimeSpan HoraFin,
     string Estado,
     string? PacienteId,
-    string? PacienteNombre = null);
+    string? PacienteNombre = null,
+    string? PacienteDocumento = null);
 
 public record FranjaDisponibleDto(DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin);

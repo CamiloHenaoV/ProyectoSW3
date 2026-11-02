@@ -9,3 +9,5 @@ public record RegistroPacienteRequest(
 );
 
 public record PacienteDto(string Id, string Nombre, string DocumentoIdentidad, string Telefono, string Email);
+
+public record PacienteResumenDto(string Id, string Nombre, string DocumentoIdentidad);

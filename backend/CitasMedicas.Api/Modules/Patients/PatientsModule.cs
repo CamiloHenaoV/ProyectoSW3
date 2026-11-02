@@ -10,6 +10,8 @@ public static class PatientsModule
     {
         services.AddScoped<IPacienteRepository, PacienteRepository>();
         services.AddScoped<IPacienteService, PacienteService>();
+        services.AddHttpClient();
+        services.AddScoped<IKeycloakPacienteProvisioner, KeycloakPacienteProvisioner>();
         services.AddScoped<AuthService>();
         return services;
     }

@@ -62,6 +62,11 @@ public class AuthServiceTests
         public Task<List<Paciente>> GetAllAsync(FilterDefinition<Paciente>? filter = null) => Task.FromResult(new List<Paciente>());
         public Task<Paciente?> GetByIdAsync(string id) => Task.FromResult(_paciente);
         public Task<Paciente?> FindOneAsync(FilterDefinition<Paciente> filter) => Task.FromResult(_paciente);
+        public Task<List<Paciente>> BuscarPorDocumentoAsync(string prefijo, int limite) => Task.FromResult(new List<Paciente>());
+        public Task<Paciente?> BuscarPorEmailAsync(string email) => Task.FromResult(_paciente?.Email == email ? _paciente : null);
+        public Task<Paciente?> BuscarPorDocumentoExactoAsync(string documento) => Task.FromResult(_paciente);
+        public Task<Paciente?> BuscarPorSubjectKeycloakAsync(string subjectId) => Task.FromResult(_paciente);
+        public Task<bool> VincularIdentidadKeycloakAsync(string pacienteId, string subjectId) => Task.FromResult(true);
         public Task CreateAsync(Paciente entity) => Task.CompletedTask;
         public Task<bool> UpdateAsync(string id, Paciente entity) => Task.FromResult(true);
         public Task<bool> DeleteAsync(string id) => Task.FromResult(true);

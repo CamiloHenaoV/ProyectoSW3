@@ -1,5 +1,6 @@
-using System.Text;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using CitasMedicas.Api.Modules.Configuration;
 using CitasMedicas.Api.Modules.Patients;
+using CitasMedicas.Api.Modules.Patients.Infrastructure;
 using CitasMedicas.Api.Modules.Scheduling;
 using CitasMedicas.Api.Shared.Infrastructure;
 using CitasMedicas.Api.Shared.Security;
@@ -41,13 +43,69 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
 var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
-if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
-    throw new InvalidOperationException(
-        "Falta JwtSettings:Key (mínimo 32 caracteres). Ejecuta: dotnet user-secrets set \"JwtSettings:Key\" \"<clave>\"");
+var keycloakAuthority = builder.Configuration["Keycloak:Authority"];
+var keycloakAudience = builder.Configuration["Keycloak:Audience"];
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+var authentication = builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
+
+if (!string.IsNullOrWhiteSpace(keycloakAuthority))
+{
+    if (string.IsNullOrWhiteSpace(keycloakAudience))
+        throw new InvalidOperationException("Falta configurar Keycloak:Audience.");
+
+    authentication.AddJwtBearer(options =>
+    {
+        options.Authority = keycloakAuthority;
+        options.Audience = keycloakAudience;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                if (context.Principal?.Identity is not ClaimsIdentity identity)
+                    return Task.CompletedTask;
+
+                var realmAccess = context.Principal.FindFirst("realm_access")?.Value;
+                if (string.IsNullOrWhiteSpace(realmAccess))
+                    return Task.CompletedTask;
+
+                using var json = JsonDocument.Parse(realmAccess);
+                if (json.RootElement.TryGetProperty("roles", out var roles) &&
+                    roles.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var role in roles.EnumerateArray())
+                    {
+                        if (role.ValueKind == JsonValueKind.String &&
+                            !string.IsNullOrWhiteSpace(role.GetString()))
+                        {
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role.GetString()!));
+                        }
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+}
+else
+{
+    if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
+        throw new InvalidOperationException(
+            "Falta JwtSettings:Key (mínimo 32 caracteres). Ejecuta: dotnet user-secrets set \"JwtSettings:Key\" \"<clave>\"");
+
+    authentication.AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -61,6 +119,7 @@ builder.Services
             ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
+}
 
 builder.Services.AddAuthorization(options =>
 {
@@ -113,6 +172,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
         var statusCode = exception switch
         {
+            KeycloakProvisioningException => StatusCodes.Status503ServiceUnavailable,
             InvalidOperationException => StatusCodes.Status409Conflict,
             ArgumentException => StatusCodes.Status400BadRequest,
             UnauthorizedAccessException => StatusCodes.Status403Forbidden,
@@ -130,7 +190,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
                 ? "Servicio temporalmente no disponible"
                 : "Error de solicitud",
             Detail = statusCode == StatusCodes.Status503ServiceUnavailable
-                ? "El servicio de base de datos no está disponible temporalmente."
+                ? exception?.Message ?? "El servicio externo no está disponible temporalmente."
                 : exception?.Message ?? "Ocurrió un error inesperado.",
             Type = $"https://httpstatuses.com/{statusCode}"
         });

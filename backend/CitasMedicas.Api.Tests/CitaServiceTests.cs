@@ -142,7 +142,13 @@ public class CitaServiceTests
             PacienteId = pacienteId
         });
         var medicoRepository = new FakeMedicoRepository(new Medico { Id = medicoId, Nombre = "Dra. Gómez", Especialidad = "Cardiología" });
-        var pacienteRepository = new FakePacienteRepository(new Paciente { Id = pacienteId, Nombre = "Ana López", Email = "ana@test.com" });
+        var pacienteRepository = new FakePacienteRepository(new Paciente
+        {
+            Id = pacienteId,
+            Nombre = "Ana López",
+            DocumentoIdentidad = "1234567890",
+            Email = "ana@test.com"
+        });
         var configService = new FakeConfiguracionService(new ConfiguracionMedicoDto(
             "cfg-1",
             medicoId,
@@ -157,6 +163,101 @@ public class CitaServiceTests
 
         Assert.Equal("Ana López", citas[0].PacienteNombre);
         Assert.Equal(pacienteId, citas[0].PacienteId);
+        Assert.Equal("1234567890", citas[0].PacienteDocumento);
+    }
+
+    [Fact]
+    public async Task ListarPorMedicoYFechaAsync_ResuelveCitasExistentesPorSubjectDeKeycloak()
+    {
+        const string subjectId = "keycloak-subject-123";
+        const string medicoId = "medico-123";
+        var fecha = DateTime.UtcNow.AddDays(1).Date;
+        var paciente = new Paciente
+        {
+            Id = "67f0d2e8b1d3a2d1f2b7b9f1",
+            KeycloakSubjectId = subjectId,
+            Nombre = "Ana López",
+            DocumentoIdentidad = "1234567890"
+        };
+        var citaRepository = new FakeCitaRepository(new Cita
+        {
+            Id = "cita-legacy",
+            MedicoId = medicoId,
+            Fecha = fecha,
+            HoraInicio = new TimeSpan(9, 0, 0),
+            HoraFin = new TimeSpan(9, 30, 0),
+            Estado = EstadoCita.Agendada,
+            PacienteId = subjectId
+        });
+        var service = new CitaService(
+            citaRepository,
+            new FakeMedicoRepository(new Medico { Id = medicoId, Nombre = "Dra. Gómez" }),
+            new FakePacienteRepository(paciente),
+            new FakeConfiguracionService(new ConfiguracionMedicoDto(
+                "cfg-1", medicoId, new List<DayOfWeek> { fecha.DayOfWeek },
+                new TimeSpan(9, 0, 0), new TimeSpan(10, 0, 0), 30, 2)),
+            new FranjasFijasStrategy());
+
+        var cita = Assert.Single(await service.ListarPorMedicoYFechaAsync(medicoId, fecha));
+
+        Assert.Equal("Ana López", cita.PacienteNombre);
+        Assert.Equal("1234567890", cita.PacienteDocumento);
+    }
+
+    [Fact]
+    public async Task ListarPorDocumentoAsync_DevuelveHistorialConDatosDelPacienteYMedico()
+    {
+        const string pacienteId = "paciente-123";
+        const string medicoId = "medico-123";
+        var paciente = new Paciente
+        {
+            Id = pacienteId,
+            Nombre = "Ana López",
+            DocumentoIdentidad = "1234567890"
+        };
+        var citaRepository = new FakeCitaRepository(new Cita
+        {
+            Id = "cita-1",
+            MedicoId = medicoId,
+            Fecha = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+            HoraInicio = new TimeSpan(9, 0, 0),
+            HoraFin = new TimeSpan(10, 0, 0),
+            Estado = EstadoCita.Atendida,
+            PacienteId = pacienteId
+        });
+        var service = new CitaService(
+            citaRepository,
+            new FakeMedicoRepository(new Medico { Id = medicoId, Nombre = "Dra. Gómez" }),
+            new FakePacienteRepository(paciente),
+            new FakeConfiguracionService(new ConfiguracionMedicoDto(
+                "cfg-1", medicoId, new List<DayOfWeek> { DayOfWeek.Monday },
+                new TimeSpan(9, 0, 0), new TimeSpan(10, 0, 0), 60, 2)),
+            new FranjasFijasStrategy());
+
+        var historial = await service.ListarPorDocumentoAsync("1234567890");
+
+        var cita = Assert.Single(historial!);
+        Assert.Equal("Ana López", cita.PacienteNombre);
+        Assert.Equal("1234567890", cita.PacienteDocumento);
+        Assert.Equal("Dra. Gómez", cita.NombreMedico);
+        Assert.Equal(EstadoCita.Atendida.ToString(), cita.Estado);
+    }
+
+    [Fact]
+    public async Task ListarPorDocumentoAsync_DevuelveNullSiNoExistePaciente()
+    {
+        var service = new CitaService(
+            new FakeCitaRepository(),
+            new FakeMedicoRepository(),
+            new FakePacienteRepository(),
+            new FakeConfiguracionService(new ConfiguracionMedicoDto(
+                "cfg-1", "medico-1", new List<DayOfWeek> { DayOfWeek.Monday },
+                new TimeSpan(9, 0, 0), new TimeSpan(10, 0, 0), 60, 2)),
+            new FranjasFijasStrategy());
+
+        var historial = await service.ListarPorDocumentoAsync("1234567890");
+
+        Assert.Null(historial);
     }
 
     [Fact]
@@ -448,8 +549,27 @@ public class CitaServiceTests
         public FakePacienteRepository(Paciente? paciente = null) => _paciente = paciente;
 
         public Task<List<Paciente>> GetAllAsync(FilterDefinition<Paciente>? filter = null) => Task.FromResult(_paciente is null ? new List<Paciente>() : new List<Paciente> { _paciente });
-        public Task<Paciente?> GetByIdAsync(string id) => Task.FromResult(_paciente);
-        public Task<Paciente?> FindOneAsync(FilterDefinition<Paciente> filter) => Task.FromResult(_paciente);
+        public Task<Paciente?> GetByIdAsync(string id) => Task.FromResult(_paciente?.Id == id ? _paciente : null);
+        public Task<Paciente?> FindOneAsync(FilterDefinition<Paciente> filter) => Task.FromResult<Paciente?>(null);
+        public Task<Paciente?> BuscarPorEmailAsync(string email)
+            => Task.FromResult(_paciente?.Email == email ? _paciente : null);
+        public Task<List<Paciente>> BuscarPorDocumentoAsync(string prefijo, int limite)
+            => Task.FromResult(_paciente is not null && _paciente.DocumentoIdentidad.StartsWith(prefijo, StringComparison.Ordinal)
+                ? new List<Paciente> { _paciente }.Take(limite).ToList()
+                : new List<Paciente>());
+        public Task<Paciente?> BuscarPorDocumentoExactoAsync(string documento)
+            => Task.FromResult(_paciente?.DocumentoIdentidad == documento ? _paciente : null);
+        public Task<Paciente?> BuscarPorSubjectKeycloakAsync(string subjectId)
+            => Task.FromResult(_paciente?.KeycloakSubjectId == subjectId ? _paciente : null);
+        public Task<bool> VincularIdentidadKeycloakAsync(string pacienteId, string subjectId)
+        {
+            if (_paciente?.Id != pacienteId ||
+                (_paciente.KeycloakSubjectId is not null && _paciente.KeycloakSubjectId != subjectId))
+                return Task.FromResult(false);
+
+            _paciente.KeycloakSubjectId = subjectId;
+            return Task.FromResult(true);
+        }
         public Task CreateAsync(Paciente entity) => Task.CompletedTask;
         public Task<bool> UpdateAsync(string id, Paciente entity) => Task.FromResult(true);
         public Task<bool> DeleteAsync(string id) => Task.FromResult(true);

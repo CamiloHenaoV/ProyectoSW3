@@ -23,6 +23,9 @@ public class Paciente
     [BsonElement("Email")]
     public string Email { get; set; } = string.Empty;
 
+    [BsonElement("KeycloakSubjectId")]
+    public string? KeycloakSubjectId { get; set; }
+
     [BsonElement("PasswordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 

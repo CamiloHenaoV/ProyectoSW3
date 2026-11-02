@@ -55,6 +55,7 @@ public class CitaService : ICitaService
 
         var citas = await _citaRepository.GetAllAsync(filtro);
         var pacientesPorId = new Dictionary<string, string>();
+        var documentosPorId = new Dictionary<string, string>();
 
         if (_pacienteRepository is not null)
         {
@@ -62,8 +63,9 @@ public class CitaService : ICitaService
             {
                 if (!pacientesPorId.ContainsKey(cita.PacienteId!))
                 {
-                    var paciente = await _pacienteRepository.GetByIdAsync(cita.PacienteId!);
+                    var paciente = await ObtenerPacientePorReferenciaAsync(cita.PacienteId!);
                     pacientesPorId[cita.PacienteId!] = paciente?.Nombre ?? "Desconocido";
+                    documentosPorId[cita.PacienteId!] = paciente?.DocumentoIdentidad ?? string.Empty;
                 }
             }
         }
@@ -81,13 +83,23 @@ public class CitaService : ICitaService
                 c.PacienteId,
                 c.PacienteId is not null && pacientesPorId.TryGetValue(c.PacienteId, out var pacienteNombre)
                     ? pacienteNombre
+                    : null,
+                c.PacienteId is not null && documentosPorId.TryGetValue(c.PacienteId, out var pacienteDocumento)
+                    ? pacienteDocumento
                     : null))
             .ToList();
     }
 
-    public async Task<List<CitaListadoDto>> ListarPorPacienteAsync(string pacienteId)
+    public async Task<List<CitaListadoDto>> ListarPorPacienteAsync(
+        string pacienteId,
+        string? identidadExternaId = null)
     {
-        var citas = await _citaRepository.GetAllAsync(Builders<Cita>.Filter.Eq(c => c.PacienteId, pacienteId));
+        var filtro = identidadExternaId is null
+            ? Builders<Cita>.Filter.Eq(c => c.PacienteId, pacienteId)
+            : Builders<Cita>.Filter.Or(
+                Builders<Cita>.Filter.Eq(c => c.PacienteId, pacienteId),
+                Builders<Cita>.Filter.Eq(c => c.PacienteId, identidadExternaId));
+        var citas = await _citaRepository.GetAllAsync(filtro);
 
         var medicosPorId = new Dictionary<string, string>();
         foreach (var cita in citas)
@@ -112,6 +124,48 @@ public class CitaService : ICitaService
                 c.Estado.ToString(),
                 c.PacienteId,
                 null))
+            .ToList();
+    }
+
+    public async Task<List<CitaListadoDto>?> ListarPorDocumentoAsync(string documento)
+    {
+        if (_pacienteRepository is null)
+            throw new InvalidOperationException("El repositorio de pacientes no está configurado.");
+
+        var paciente = await _pacienteRepository.BuscarPorDocumentoExactoAsync(documento);
+        if (paciente is null)
+            return null;
+
+        var filtroCitas = string.IsNullOrWhiteSpace(paciente.KeycloakSubjectId)
+            ? Builders<Cita>.Filter.Eq(c => c.PacienteId, paciente.Id)
+            : Builders<Cita>.Filter.Or(
+                Builders<Cita>.Filter.Eq(c => c.PacienteId, paciente.Id),
+                Builders<Cita>.Filter.Eq(c => c.PacienteId, paciente.KeycloakSubjectId));
+        var citas = await _citaRepository.GetAllAsync(filtroCitas);
+        var medicosPorId = new Dictionary<string, string>();
+        foreach (var cita in citas)
+        {
+            if (!medicosPorId.ContainsKey(cita.MedicoId))
+            {
+                var medico = await _medicoRepository.GetByIdAsync(cita.MedicoId);
+                medicosPorId[cita.MedicoId] = medico?.Nombre ?? "Desconocido";
+            }
+        }
+
+        return citas
+            .OrderByDescending(c => c.Fecha)
+            .ThenBy(c => c.HoraInicio)
+            .Select(c => new CitaListadoDto(
+                c.Id,
+                c.MedicoId,
+                medicosPorId.TryGetValue(c.MedicoId, out var nombre) ? nombre : "Desconocido",
+                c.Fecha,
+                c.HoraInicio,
+                c.HoraFin,
+                c.Estado.ToString(),
+                paciente.Id,
+                paciente.Nombre,
+                paciente.DocumentoIdentidad))
             .ToList();
     }
 
@@ -199,13 +253,18 @@ public class CitaService : ICitaService
             _pacienteRepository is not null ? (await _pacienteRepository.GetByIdAsync(pacienteId))?.Nombre : null);
     }
 
-    public async Task<bool> CancelarAsync(string citaId, string? pacienteId)
+    public async Task<bool> CancelarAsync(
+        string citaId,
+        string? pacienteId,
+        string? identidadExternaId = null)
     {
         var cita = await _citaRepository.GetByIdAsync(citaId);
         if (cita is null)
             return false;
 
-        if (pacienteId is not null && cita.PacienteId != pacienteId)
+        if (pacienteId is not null &&
+            cita.PacienteId != pacienteId &&
+            cita.PacienteId != identidadExternaId)
             throw new UnauthorizedAccessException("Solo puedes cancelar tus propias citas.");
 
         if (cita.Estado is EstadoCita.Cancelada or EstadoCita.Atendida)
@@ -221,13 +280,14 @@ public class CitaService : ICitaService
     public async Task<CitaListadoDto?> ReagendarAsync(
         string citaId,
         string pacienteId,
-        ReagendarCitaRequest request)
+        ReagendarCitaRequest request,
+        string? identidadExternaId = null)
     {
         var cita = await _citaRepository.GetByIdAsync(citaId);
         if (cita is null)
             return null;
 
-        if (cita.PacienteId != pacienteId)
+        if (cita.PacienteId != pacienteId && cita.PacienteId != identidadExternaId)
             throw new UnauthorizedAccessException("Solo puedes reagendar tus propias citas.");
 
         if (cita.Estado != EstadoCita.Agendada)
@@ -268,8 +328,8 @@ public class CitaService : ICitaService
         if (!await _citaRepository.UpdateAsync(cita.Id, cita))
             return null;
 
-        var nombrePaciente = _pacienteRepository is not null && cita.PacienteId is not null
-            ? (await _pacienteRepository.GetByIdAsync(cita.PacienteId))?.Nombre
+        var pacienteActualizado = cita.PacienteId is not null
+            ? await ObtenerPacientePorReferenciaAsync(cita.PacienteId)
             : null;
 
         return new CitaListadoDto(
@@ -281,6 +341,16 @@ public class CitaService : ICitaService
             cita.HoraFin,
             cita.Estado.ToString(),
             cita.PacienteId,
-            nombrePaciente);
+            pacienteActualizado?.Nombre,
+            pacienteActualizado?.DocumentoIdentidad);
+    }
+
+    private async Task<Paciente?> ObtenerPacientePorReferenciaAsync(string referencia)
+    {
+        if (_pacienteRepository is null)
+            return null;
+
+        return await _pacienteRepository.GetByIdAsync(referencia)
+            ?? await _pacienteRepository.BuscarPorSubjectKeycloakAsync(referencia);
     }
 }
