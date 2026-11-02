@@ -244,6 +244,11 @@ public class CitaService : ICitaService
 
         var configuracion = await _configuracionService.ObtenerPorMedicoAsync(cita.MedicoId)
             ?? throw new InvalidOperationException("El médico/terapista no tiene configuración de disponibilidad.");
+        var fechaMaxima = DateTime.UtcNow.Date.AddDays(7 * configuracion.SemanasHabilitadas);
+        if (fechaNormalizada > fechaMaxima)
+            throw new InvalidOperationException(
+                $"La nueva fecha supera el límite de {configuracion.SemanasHabilitadas} semanas habilitadas para este médico/terapista.");
+
         var filtroFecha = Builders<Cita>.Filter.And(
             Builders<Cita>.Filter.Eq(c => c.MedicoId, cita.MedicoId),
             Builders<Cita>.Filter.Eq(c => c.Fecha, fechaNormalizada));

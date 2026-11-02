@@ -325,6 +325,36 @@ public class CitaServiceTests
     }
 
     [Fact]
+    public async Task ReagendarAsync_RechazaFechaMasAllaDeSemanasHabilitadas()
+    {
+        var fechaFueraDeVentana = DateTime.UtcNow.Date.AddDays(8);
+        var cita = new Cita
+        {
+            Id = "cita-1",
+            MedicoId = "medico-1",
+            Fecha = DateTime.UtcNow.Date.AddDays(1),
+            Estado = EstadoCita.Agendada,
+            PacienteId = "paciente-1"
+        };
+        var service = new CitaService(
+            new FakeCitaRepository(cita),
+            new FakeMedicoRepository(new Medico { Id = "medico-1", Nombre = "Dra. Gómez" }),
+            new FakeConfiguracionService(new ConfiguracionMedicoDto(
+                "cfg-1", "medico-1", new List<DayOfWeek> { fechaFueraDeVentana.DayOfWeek },
+                new TimeSpan(9, 0, 0), new TimeSpan(11, 0, 0), 60, 1)),
+            new FranjasFijasStrategy());
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReagendarAsync(
+                cita.Id,
+                "paciente-1",
+                new ReagendarCitaRequest(fechaFueraDeVentana, new TimeSpan(9, 0, 0))));
+
+        Assert.Contains("1 semanas habilitadas", ex.Message);
+        Assert.Equal(DateTime.UtcNow.Date.AddDays(1), cita.Fecha);
+    }
+
+    [Fact]
     public async Task EliminarAsync_DevuelveFalseCuandoLaCitaNoExiste()
     {
         var service = CrearServicio(new FakeCitaRepository());
