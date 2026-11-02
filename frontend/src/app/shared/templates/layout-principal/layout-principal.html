@@ -1,33 +1,35 @@
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
 <header class="topbar">
   <div class="topbar__inner">
-    <div class="brand" aria-label="Citas Médicas">
-      <span class="brand__eyebrow">consulta / agenda</span>
+    <a class="brand" routerLink="/" aria-label="Piedrazul, inicio">
       <h1>Citas Médicas</h1>
-    </div>
+      <span class="brand__sub">Piedrazul</span>
+    </a>
 
     <nav class="topbar__nav" aria-label="Navegación principal">
-      @if (isAuthenticated()) {
-        @if (isPaciente()) {
-          <a routerLink="/agendar" routerLinkActive="is-active">Agendar</a>
-          <a routerLink="/mis-citas" routerLinkActive="is-active">Mis citas</a>
+      @if (autenticado()) {
+        @for (enlace of enlaces(); track enlace.ruta) {
+          <a [routerLink]="enlace.ruta" routerLinkActive="is-active">{{ enlace.etiqueta }}</a>
         }
-
-        @if (isAgendador()) {
-          <a routerLink="/citas" routerLinkActive="is-active">Listado</a>
-        }
-
-        @if (isAdmin()) {
-          <a routerLink="/admin/configuracion" routerLinkActive="is-active">Administración</a>
-        }
-
-        <button type="button" class="topbar__logout" (click)="logout()">Cerrar sesión</button>
       } @else {
         <a routerLink="/login" routerLinkActive="is-active">Iniciar sesión</a>
+        <a routerLink="/registro" routerLinkActive="is-active">Crear cuenta</a>
       }
     </nav>
+
+    @if (sesion(); as usuario) {
+      <div class="usuario">
+        <div class="usuario__datos">
+          <strong>{{ usuario.nombre }}</strong>
+          <span>{{ rolVisible() }}</span>
+        </div>
+        <button type="button" class="topbar__logout" (click)="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    }
   </div>
 </header>
 
-<main class="contenido">
+<main class="contenido" id="contenido" tabindex="-1">
   <router-outlet />
 </main>

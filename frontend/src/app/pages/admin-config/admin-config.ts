@@ -6,6 +6,7 @@ import { Medico } from '../../core/models/cita.model';
 import { SelectField, SelectOption } from '../../shared/atoms/select-field/select-field';
 import { Button } from '../../shared/atoms/button/button';
 import { FormularioConfiguracion } from '../../shared/organisms/formulario-configuracion/formulario-configuracion';
+import { mensajeDeError } from '../../core/utils/http-errores';
 
 // RF3: Yo como administrador necesito configurar los parametros del sistema
 // para que el agendamiento autonomo funcione acorde a la disponibilidad de cada medico/terapista.
@@ -24,11 +25,12 @@ export class AdminConfig {
   medicoId = signal('');
   configuracion = signal<ConfiguracionMedico | null>(null);
   mensaje = signal('');
+  mensajeEsError = signal(false);
 
   constructor() {
     this.medicosService.listar(true).subscribe({
       next: (medicos) => this.medicos.set(medicos),
-      error: () => this.mensaje.set('No fue posible cargar los médicos/terapistas.')
+      error: (err) => this.avisarError(mensajeDeError(err, 'No fue posible cargar los médicos y terapistas.'))
     });
     this.cargarConfiguraciones();
   }
@@ -36,7 +38,7 @@ export class AdminConfig {
   get opcionesMedicos(): SelectOption[] {
     return this.medicos()
       .filter((medico) => medico.activo)
-      .map((medico) => ({ value: medico.id, label: `${medico.nombre} - ${medico.especialidad}` }));
+      .map((medico) => ({ value: medico.id, label: `${medico.nombre} · ${medico.especialidad}` }));
   }
 
   onMedicoSeleccionado(id: string): void {
@@ -58,10 +60,10 @@ export class AdminConfig {
     this.configuracionService.guardar(request).subscribe({
       next: (config) => {
         this.configuracion.set(config);
-        this.mensaje.set('Configuración guardada correctamente.');
+        this.avisar('Configuración guardada. Los pacientes ya ven la nueva disponibilidad.');
         this.cargarConfiguraciones();
       },
-      error: () => this.mensaje.set('Ocurrió un error al guardar la configuración.')
+      error: (err) => this.avisarError(mensajeDeError(err, 'Ocurrió un error al guardar la configuración.'))
     });
   }
 
@@ -74,7 +76,7 @@ export class AdminConfig {
   cambiarEstado(configuracion: ConfiguracionMedico): void {
     const medico = this.medicos().find((item) => item.id === configuracion.medicoId);
     if (!medico) {
-      this.mensaje.set('No fue posible encontrar el médico/terapista.');
+      this.avisarError('No fue posible encontrar el médico o terapista.');
       return;
     }
 
@@ -93,9 +95,9 @@ export class AdminConfig {
           this.medicoId.set('');
           this.configuracion.set(null);
         }
-        this.mensaje.set(`Médico/terapista ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+        this.avisar(`${medico.nombre} quedó ${nuevoEstado ? 'activo' : 'inactivo'}.`);
       },
-      error: () => this.mensaje.set(`Ocurrió un error al ${accion} al médico/terapista.`)
+      error: (err) => this.avisarError(mensajeDeError(err, `Ocurrió un error al ${accion} a ${medico.nombre}.`))
     });
   }
 
@@ -105,13 +107,23 @@ export class AdminConfig {
 
   nombreMedico(medicoId: string): string {
     const medico = this.medicos().find((item) => item.id === medicoId);
-    return medico ? `${medico.nombre} - ${medico.especialidad}` : medicoId;
+    return medico ? `${medico.nombre} · ${medico.especialidad}` : medicoId;
   }
 
   private cargarConfiguraciones(): void {
     this.configuracionService.listar().subscribe({
       next: (configuraciones) => this.configuraciones.set(configuraciones),
-      error: () => this.mensaje.set('No fue posible cargar las configuraciones existentes.')
+      error: (err) => this.avisarError(mensajeDeError(err, 'No fue posible cargar las configuraciones existentes.'))
     });
+  }
+
+  private avisar(texto: string): void {
+    this.mensaje.set(texto);
+    this.mensajeEsError.set(false);
+  }
+
+  private avisarError(texto: string): void {
+    this.mensaje.set(texto);
+    this.mensajeEsError.set(true);
   }
 }

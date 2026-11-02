@@ -1,13 +1,16 @@
 .filtro {
   display: grid;
-  grid-template-columns: minmax(220px, 1.6fr) minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1.6fr) minmax(170px, 1fr) auto;
   gap: 0.8rem;
   align-items: end;
 }
 
-.filtro app-select-field,
-.filtro app-input-field {
+.campo {
+  display: grid;
+  gap: 0.35rem;
   min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

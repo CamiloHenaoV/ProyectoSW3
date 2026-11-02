@@ -1,0 +1,82 @@
+.autocompletar {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.campo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.control {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.entrada {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--ink);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.consultar {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #f8fafc;
+  padding: 0 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consultar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lista {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-soft);
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.opcion {
+  display: flex;
+  gap: 0.9rem;
+  align-items: baseline;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+}
+
+.opcion strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-width: 7.5rem;
+}
+
+.opcion--activa,
+.opcion:hover {
+  background: var(--accent-soft);
+}
+
+.lista__estado {
+  padding: 0.7rem 0.9rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}

@@ -15,6 +15,7 @@ Proyecto del curso Ingeniería de Software III — Universidad del Cauca, Facult
 5. [Cómo ejecutar el proyecto](#5-cómo-ejecutar-el-proyecto)
 6. [API REST](#6-api-rest)
 7. [Release 1 — Primer corte](#7-release-1--primer-corte)
+8. [Release 2 — Segundo corte](#8-release-2--segundo-corte)
 
 
 ---
@@ -36,8 +37,9 @@ Las franjas que ve el paciente se calculan automáticamente según la configurac
 | Rol | Qué puede hacer | Pantalla de inicio |
 |---|---|---|
 | Paciente | Registrarse, iniciar sesión, agendar citas y ver sus citas | /agendar |
-| Agendador | Listar las citas de un médico o terapista por fecha | /citas |
-| Administrador | Configurar la disponibilidad de cada profesional y consultar el listado de citas | /admin/configuracion |
+| Agendador | Listar y exportar las citas de un médico o terapista por fecha; consultar el historial de un paciente por cédula | /citas |
+| Médico / Terapista | Consultar y exportar su propia agenda; consultar el historial de un paciente por cédula | /citas |
+| Administrador | Configurar la disponibilidad de cada profesional, consultar agendas e historiales | /admin/configuracion |
 
 ### Pantallas
 
@@ -47,8 +49,10 @@ Las franjas que ve el paciente se calculan automáticamente según la configurac
 | /registro | Registro de paciente | Público |
 | /agendar | Elegir médico, fecha y franja; confirmar la cita | Paciente |
 | /mis-citas | Historial de citas del paciente | Paciente |
-| /citas | Listado de citas por médico y fecha | Agendador, Administrador |
+| /citas | Listado de citas por médico y fecha, con exportación a CSV | Agendador, Médico, Terapista, Administrador |
+| /historial | Historial de citas de un paciente por cédula | Agendador, Médico, Terapista, Administrador |
 | /admin/configuracion | Parámetros de agendamiento por médico | Administrador |
+| /no-autorizado | Aviso cuando el rol no tiene acceso a una sección | Autenticado |
 
 ---
 
@@ -60,8 +64,8 @@ Las franjas que ve el paciente se calculan automáticamente según la configurac
 | Diseño de UI | Atomic Design (atoms → molecules → organisms → templates → pages) |
 | Backend | ASP.NET Core (.NET 10) con API REST |
 | Persistencia | MongoDB con MongoDB.Driver |
-| Seguridad | JWT Bearer, BCrypt para contraseñas y autorización por roles |
-| Infraestructura local | Docker Compose para MongoDB y Mongo Express |
+| Seguridad | Keycloak 26 (OIDC, Authorization Code + PKCE), JWT Bearer y autorización por roles |
+| Infraestructura local | Docker Compose para MongoDB, Mongo Express y Keycloak |
 
 ---
 
@@ -131,8 +135,10 @@ flowchart LR
 │       ├── core/                 # modelos, servicios y autenticación
 │       ├── pages/                # pantallas por caso de uso
 │       └── shared/               # atoms, molecules, organisms, templates
+├── keycloak/                     # realm piedrazul (roles, clientes y usuarios de prueba)
+├── docs/                         # contratos de API del segundo corte
 ├── mongo-init/                   # script de limpieza y carga de datos de prueba
-├── docker-compose.yml            # MongoDB local y Mongo Express
+├── docker-compose.yml            # MongoDB, Mongo Express y Keycloak
 ├── CitasMedicas.slnx             # solución del proyecto
 ├── README.md                     # documentación principal
 └── .gitignore
@@ -156,7 +162,7 @@ flowchart LR
 docker compose up -d
 ```
 
-Esto levanta MongoDB en localhost:27017 y Mongo Express en http://localhost:8081. Para cargar los datos de prueba:
+Esto levanta MongoDB en localhost:27017, Mongo Express en http://localhost:8081 y Keycloak en http://localhost:8080 (consola de administración: `admin` / `admin`, solo desarrollo). Keycloak importa automáticamente el realm `piedrazul` desde `keycloak/realm-piedrazul.json`. Para cargar los datos de prueba:
 
 ```bash
 docker exec -i piedrazul-mongo mongosh --quiet < mongo-init/reset-and-seed.js
@@ -207,7 +213,7 @@ La aplicación queda en http://localhost:4200. La URL de la API se configura en 
 
 ### 4) Usuarios de prueba
 
-Se cargan por medio del script de seed:
+Desde el segundo corte los usuarios viven en Keycloak (ver la tabla en [frontend/README.md](frontend/README.md#usuarios-de-prueba)). La tabla siguiente corresponde al login propio del primer corte y al seed de MongoDB:
 
 | Rol | Correo | Contraseña |
 |---|---|---|
@@ -356,3 +362,25 @@ Resultado actual verificado: 4 pruebas del backend ejecutándose correctamente c
 
 
 **Convención de commits:** [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) (`feat`, `fix`, `docs`, `test`, `chore`), con alcance opcional por requisito, por ejemplo `feat(RF2): registro de paciente`.
+
+---
+
+## 8. Release 2 — Segundo corte
+
+### 8.1 Alcance
+
+| Requisito | Descripción | Frontend |
+|---|---|---|
+| RF1 | Listar citas de un profesional por fecha, con filtros y cantidad | Implementado (filtros por estado y por paciente o cédula) |
+| RF2 | Agendar por la web viendo las franjas disponibles | Implementado (disponibilidad semanal visible antes de elegir el día) |
+| RF3 | Configurar la disponibilidad de cada profesional | Implementado (con validación en el formulario) |
+| RF4 | Exportar las citas de un profesional y una fecha a CSV | Implementado (se genera en el navegador) |
+| RF5 | Consultar el historial de citas de un paciente por cédula | Implementado (con autocompletado) |
+| RNF1 | Autenticación y autorización con JWT emitidos por Keycloak | Implementado en el frontend; el realm se importa con Docker Compose |
+| RNF2 | Pruebas con OWASP ZAP | Cabeceras de seguridad en el servidor de desarrollo y protección contra inyección en CSV |
+
+### 8.2 Documentación
+
+- [frontend/README.md](frontend/README.md): ejecución, arquitectura del frontend, patrones GoF, escenarios de calidad de seguridad y pruebas.
+- [docs/contratos-api-segundo-corte.md](docs/contratos-api-segundo-corte.md): endpoints nuevos (`/api/citas/historial`, `/api/pacientes/buscar`), cambios de roles y validación del token de Keycloak en ASP.NET Core.
+

@@ -14,12 +14,15 @@ export class FiltroFechaMedico {
   medicos = input.required<Medico[]>();
   medicoId = input<string>('');
   fecha = input<string>('');
+  /** Un médico autenticado con claim medico_id solo consulta su propia agenda. */
+  bloquearMedico = input(false);
+  cargando = input(false);
 
   medicoIdChange = output<string>();
   fechaChange = output<string>();
   buscar = output<void>();
 
   opciones = computed<SelectOption[]>(() =>
-    this.medicos().map((m) => ({ value: m.id, label: `${m.nombre} - ${m.especialidad}` }))
+    this.medicos().map((m) => ({ value: m.id, label: `${m.nombre} · ${m.especialidad}` }))
   );
 }

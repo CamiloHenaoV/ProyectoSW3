@@ -1,12 +1,13 @@
-<section class="pagina">
+<section class="pagina pagina--angosta">
   <header class="page-header">
     <p class="eyebrow">Configuración</p>
     <h2>Agendamiento del equipo</h2>
+    <p class="page-intro">Define qué días y en qué horario atiende cada profesional, cada cuánto se dan citas y con cuántas semanas de anticipación se puede agendar.</p>
   </header>
 
   <div class="selection-panel">
     <app-select-field
-      placeholder="Médico/Terapista"
+      placeholder="Selecciona un médico o terapista"
       [options]="opcionesMedicos"
       [value]="medicoId()"
       (valueChange)="onMedicoSeleccionado($event)"
@@ -51,8 +52,9 @@
       [configuracion]="configuracion()"
       (guardar)="guardar($event)"
     />
-    @if (mensaje()) {
-      <p class="mensaje">{{ mensaje() }}</p>
-    }
+  }
+
+  @if (mensaje()) {
+    <p class="aviso" [class.aviso--error]="mensajeEsError()" [class.aviso--exito]="!mensajeEsError()" role="status">{{ mensaje() }}</p>
   }
 </section>

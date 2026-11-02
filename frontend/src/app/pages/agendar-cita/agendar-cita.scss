@@ -1,48 +1,124 @@
-.pagina {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 760px;
-}
-
-.page-header {
-  display: grid;
-  gap: 0.75rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.eyebrow {
+.pasos {
   margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.page-header h2 {
-  font-size: clamp(2.8rem, 5vw, 4.2rem);
-  line-height: 0.9;
-}
-
-.seleccion {
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
   display: grid;
-  gap: 0.9rem;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--line);
-  padding: 1.15rem;
+  gap: 1rem;
 }
 
-.error {
-  color: var(--error);
+.paso {
+  counter-increment: paso;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.2rem 1.2rem 1.3rem 3.6rem;
+  position: relative;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.paso::before {
+  content: counter(paso);
+  position: absolute;
+  left: 1.2rem;
+  top: 1.1rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.paso h3 {
+  font-size: 1.55rem;
+}
+
+.paso--inactivo {
+  background: transparent;
+}
+
+.paso--inactivo::before {
+  background: var(--paper-alt);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+}
+
+.fecha-elegida {
+  margin: -0.4rem 0 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fecha-elegida::first-letter {
+  text-transform: uppercase;
+}
+
+.resumen {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.resumen div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.75rem;
+}
+
+.resumen dt {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.resumen dd {
+  margin: 0;
+  color: var(--ink);
   font-weight: 600;
 }
 
 .confirmacion {
   display: grid;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--line);
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(19, 108, 77, 0.3);
+  border-left: 4px solid var(--success);
+  background: rgba(19, 108, 77, 0.04);
+}
+
+.confirmacion h3 {
+  font-size: 2rem;
   color: var(--success);
+}
+
+.confirmacion p {
+  margin: 0;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.enlace-boton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.82rem 1.2rem;
+  background: var(--ink);
+  color: #f8fafc;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .paso {
+    padding-left: 1.2rem;
+    padding-top: 3.2rem;
+  }
 }

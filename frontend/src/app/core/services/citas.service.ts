@@ -9,9 +9,16 @@ export class CitasService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/citas`;
 
+  /** RF1 / RF4: citas de un médico o terapista en una fecha. */
   listarPorMedicoYFecha(medicoId: string, fecha: string): Observable<CitaListado[]> {
     const params = new HttpParams().set('medicoId', medicoId).set('fecha', fecha);
     return this.http.get<CitaListado[]>(this.baseUrl, { params });
+  }
+
+  /** RF5: historial de citas de un paciente a partir de su cédula. */
+  historialPorDocumento(documento: string): Observable<CitaListado[]> {
+    const params = new HttpParams().set('documento', documento);
+    return this.http.get<CitaListado[]>(`${this.baseUrl}/historial`, { params });
   }
 
   misCitas(): Observable<CitaListado[]> {

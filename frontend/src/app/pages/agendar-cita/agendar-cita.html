@@ -1,42 +1,93 @@
-<section class="pagina">
+<section class="pagina pagina--angosta">
   <header class="page-header">
     <p class="eyebrow">Agendamiento</p>
     <h2>Reserva tu consulta</h2>
+    <p class="page-intro">Elige con quién, qué día y a qué hora. Solo verás horarios que de verdad están libres.</p>
   </header>
 
-  @if (mensaje()) {
-    <p [class.error]="mensajeEsError()">{{ mensaje() }}</p>
+  @if (citaConfirmada(); as cita) {
+    <div class="confirmacion" role="status">
+      <h3>Tu cita quedó agendada</h3>
+      <dl class="resumen">
+        <div><dt>Profesional</dt><dd>{{ cita.nombreMedico || medico()?.nombre }}</dd></div>
+        <div><dt>Día</dt><dd>{{ fechaTexto() }}</dd></div>
+        <div><dt>Hora</dt><dd>{{ horaTexto() }}</dd></div>
+      </dl>
+      <p>Si no puedes asistir, cancélala o cámbiala desde «Mis citas».</p>
+      <div class="acciones">
+        <a class="enlace-boton" routerLink="/mis-citas">Ver mis citas</a>
+        <app-button label="Agendar otra cita" variant="secondary" (clicked)="agendarOtra()" />
+      </div>
+    </div>
+  } @else {
+    <ol class="pasos">
+      <li class="paso">
+        <h3>Profesional</h3>
+        <app-select-field
+          placeholder="Selecciona un médico o terapista"
+          ariaLabel="Médico o terapista"
+          [options]="opcionesMedicos()"
+          [value]="medicoId()"
+          (valueChange)="elegirMedico($event)"
+        />
+      </li>
+
+      <li class="paso" [class.paso--inactivo]="!medicoId()">
+        <h3>Día</h3>
+        @if (medicoId()) {
+          <app-selector-semana
+            [dias]="dias()"
+            [seleccionada]="fecha()"
+            [puedeRetroceder]="puedeRetroceder()"
+            [puedeAvanzar]="puedeAvanzar()"
+            (seleccionar)="elegirDia($event)"
+            (anterior)="cambiarSemana(-1)"
+            (siguiente)="cambiarSemana(1)"
+          />
+          @if (cargandoSemana()) {
+            <p class="estado-carga">Consultando disponibilidad…</p>
+          } @else if (semanaSinCupos()) {
+            <p class="estado-carga">No hay cupos esta semana. Prueba con la siguiente.</p>
+          }
+        } @else {
+          <p class="estado-carga">Primero elige un profesional.</p>
+        }
+      </li>
+
+      <li class="paso" [class.paso--inactivo]="!fecha()">
+        <h3>Horario</h3>
+        @if (fecha()) {
+          <p class="fecha-elegida">{{ fechaTexto() }}</p>
+          <app-selector-franjas
+            [franjas]="franjas()"
+            [seleccionada]="franjaSeleccionada()"
+            mensajeVacio="Este día ya no tiene horarios libres. Elige otro día."
+            (seleccionar)="franjaSeleccionada.set($event)"
+          />
+        } @else {
+          <p class="estado-carga">Elige un día con cupos.</p>
+        }
+      </li>
+
+      <li class="paso" [class.paso--inactivo]="!franjaSeleccionada()">
+        <h3>Confirmar</h3>
+        @if (franjaSeleccionada()) {
+          <dl class="resumen">
+            <div><dt>Profesional</dt><dd>{{ medico()?.nombre }} · {{ medico()?.especialidad }}</dd></div>
+            <div><dt>Día</dt><dd>{{ fechaTexto() }}</dd></div>
+            <div><dt>Hora</dt><dd>{{ horaTexto() }}</dd></div>
+          </dl>
+        }
+        <app-button
+          [label]="enviando() ? 'Agendando…' : 'Confirmar cita'"
+          [disabled]="!franjaSeleccionada() || enviando()"
+          (clicked)="confirmarCita()"
+        />
+      </li>
+    </ol>
   }
 
-  <div class="selection-block">
-    <h3>1. Elige médico/terapista, fecha y horario</h3>
-    <div class="seleccion">
-      <app-select-field
-        placeholder="Médico/Terapista"
-        [options]="opcionesMedicos"
-        [value]="medicoId()"
-        (valueChange)="medicoId.set($event)"
-      />
-      <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set($event)" />
-      <app-button label="Ver franjas disponibles" (clicked)="buscarFranjas()" />
-    </div>
-  </div>
-
-  <app-selector-franjas
-    [franjas]="franjas()"
-    [seleccionada]="franjaSeleccionada()"
-    (seleccionar)="franjaSeleccionada.set($event)"
-  />
-
-  <app-button
-    label="Confirmar cita"
-    [disabled]="!franjaSeleccionada()"
-    (clicked)="confirmarCita()"
-  />
-
-  @if (paso() === 3) {
-    <div class="confirmacion">
-      <h3>Tu cita ha sido agendada</h3>
-    </div>
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
   }
 </section>

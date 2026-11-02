@@ -1,0 +1,53 @@
+<div class="autocompletar">
+  <label class="campo" [for]="idInput">
+    <span>Cédula del paciente</span>
+  </label>
+  <div class="control">
+    <input
+      [id]="idInput"
+      class="entrada"
+      type="text"
+      inputmode="numeric"
+      enterkeyhint="search"
+      autocomplete="off"
+      placeholder="Escribe al menos {{ minimoCaracteres() }} dígitos"
+      role="combobox"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="mostrarLista()"
+      [attr.aria-controls]="idLista"
+      [attr.aria-activedescendant]="indiceActivo() >= 0 ? idLista + '-' + indiceActivo() : null"
+      [value]="texto()"
+      (input)="alEscribir($event)"
+      (keydown)="alPresionarTecla($event)"
+      (blur)="cerrarLista()"
+      (focus)="abierta.set(true)"
+    />
+    <button type="button" class="consultar" [disabled]="!texto().trim()" (click)="consultarTexto()">
+      Consultar
+    </button>
+  </div>
+
+  @if (mostrarLista()) {
+    <ul class="lista" role="listbox" [id]="idLista">
+      @if (cargando()) {
+        <li class="lista__estado">Buscando pacientes…</li>
+      } @else {
+        @for (paciente of sugerencias(); track paciente.id; let i = $index) {
+          <li
+            role="option"
+            class="opcion"
+            [id]="idLista + '-' + i"
+            [class.opcion--activa]="i === indiceActivo()"
+            [attr.aria-selected]="i === indiceActivo()"
+            (mousedown)="$event.preventDefault(); elegir(paciente)"
+          >
+            <strong>{{ paciente.documentoIdentidad }}</strong>
+            <span>{{ paciente.nombre }}</span>
+          </li>
+        } @empty {
+          <li class="lista__estado">Ningún paciente registrado con una cédula que empiece por «{{ texto() }}».</li>
+        }
+      }
+    </ul>
+  }
+</div>

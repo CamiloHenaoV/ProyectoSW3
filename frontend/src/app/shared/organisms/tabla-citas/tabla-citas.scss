@@ -1,54 +1,85 @@
+.contenedor-tabla {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+}
+
 .tabla-citas {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid var(--line);
+  min-width: 560px;
 }
 
 .tabla-citas th,
 .tabla-citas td {
-  padding: 1rem 0.9rem;
+  padding: 0.85rem 0.9rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 
 .tabla-citas th {
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.78rem;
   color: var(--ink-soft);
   font-weight: 700;
-  background: rgba(15, 118, 110, 0.04);
+  background: rgba(15, 118, 110, 0.05);
 }
 
 .tabla-citas tr:last-child td {
   border-bottom: none;
 }
 
-.tabla-citas .fila-cancelada {
-  background: #fff7f7;
-  color: #7f1d1d;
+.num {
+  width: 3.5rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.hora,
+.documento {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.hora {
+  font-weight: 600;
+}
+
+.fecha {
+  white-space: nowrap;
+}
+
+.fecha::first-letter {
+  text-transform: uppercase;
+}
+
+.especialidad {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
 }
 
 .fila-cancelada td {
-  opacity: 0.82;
+  color: #7f1d1d;
+  opacity: 0.75;
+}
+
+.fila-cancelada .hora {
+  text-decoration: line-through;
 }
 
 .acciones {
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.total {
-  margin-top: 0.9rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
 .vacio {
+  margin: 0;
+  padding: 1.5rem 1.2rem;
+  border: 1px dashed var(--line-strong);
   color: var(--ink-soft);
-  padding: 1rem 0;
 }
