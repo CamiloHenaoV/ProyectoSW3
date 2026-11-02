@@ -376,4 +376,3 @@ Resultado actual verificado: 4 pruebas del backend ejecutándose correctamente c
 ### 8.2 Documentación
 
 - [frontend/README.md](frontend/README.md): ejecución, arquitectura del frontend, patrones GoF, escenarios de calidad de seguridad y pruebas.
-- [docs/contratos-api-segundo-corte.md](docs/contratos-api-segundo-corte.md): endpoints nuevos (`/api/citas/historial`, `/api/pacientes/buscar`), cambios de roles y validación del token de Keycloak en ASP.NET Core.
