@@ -40,10 +40,7 @@ export class CsvExportador implements ExportadorCitas {
     return (this.incluirBom ? BOM : '') + contenido + '\r\n';
   }
 
-  /**
-   * Escapa una celda según RFC 4180 y neutraliza la inyección de fórmulas
-   * (CSV injection, OWASP): un nombre como "=HYPERLINK(...)" se exporta como texto.
-   */
+  
   private celda(valor: string): string {
     let texto = valor ?? '';
     if (INICIO_FORMULA.test(texto)) {

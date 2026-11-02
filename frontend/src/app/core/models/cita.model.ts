@@ -17,7 +17,6 @@ export interface CitaListado {
   estado: EstadoCita;
   pacienteId: string | null;
   pacienteNombre?: string | null;
-  /** Cédula del paciente; opcional, se muestra y exporta si el backend la envía. */
   pacienteDocumento?: string | null;
   especialidadMedico?: string | null;
 }

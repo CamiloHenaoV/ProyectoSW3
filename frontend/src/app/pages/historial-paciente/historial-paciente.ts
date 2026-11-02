@@ -15,8 +15,6 @@ import { TablaCitas } from '../../shared/organisms/tabla-citas/tabla-citas';
 
 const ESPERA_AUTOCOMPLETAR_MS = 300;
 
-// RF5: Yo como médico/terapista/agendador necesito consultar las citas de un
-// paciente a partir de su cédula para conocer su historial de citas.
 @Component({
   selector: 'app-historial-paciente',
   imports: [AutocompletarPaciente, FiltroEstados, TablaCitas],
