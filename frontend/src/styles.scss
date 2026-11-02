@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
-
 :root {
   --paper: #f8fafc;
   --paper-alt: #f1f5f9;
@@ -13,6 +11,8 @@
   --success: #136c4d;
   --error: #a11d33;
   --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.06);
+  --warning: #92400e;
+  --focus: #0f766e;
 }
 
 * {
@@ -74,4 +74,115 @@ select {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Estructura común de páginas ---------- */
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 980px;
+}
+
+.pagina > *,
+.panel > * {
+  /* Permite que la tabla haga scroll interno en vez de ensanchar la página en móvil. */
+  min-width: 0;
+}
+
+.pagina--angosta {
+  max-width: 760px;
+}
+
+.page-header {
+  display: grid;
+  gap: 0.6rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.page-header h2 {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 0.92;
+}
+
+.page-header .page-intro {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.97rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.panel h3 {
+  font-size: 1.6rem;
+}
+
+.aviso {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  background: #fff;
+  color: var(--ink-soft);
+}
+
+.aviso--error {
+  border-color: rgba(161, 29, 51, 0.25);
+  border-left-color: var(--error);
+  background: rgba(161, 29, 51, 0.04);
+  color: var(--error);
+}
+
+.aviso--exito {
+  border-color: rgba(19, 108, 77, 0.25);
+  border-left-color: var(--success);
+  background: rgba(19, 108, 77, 0.05);
+  color: var(--success);
+}
+
+.estado-carga {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
 }

@@ -15,6 +15,8 @@ export class SelectField {
   value = input<string>('');
   placeholder = input<string>('Selecciona una opción');
   name = input<string>('');
+  disabled = input(false);
+  ariaLabel = input<string>('');
 
   valueChange = output<string>();
 

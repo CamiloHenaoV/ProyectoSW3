@@ -1,18 +1,29 @@
-<section class="pagina pagina--login">
+<section class="pagina--login">
   <header class="page-header">
-    <p class="eyebrow">Acceso</p>
     <h2>Bienvenido a Citas Médicas</h2>
+    <p class="page-intro">Agenda, consulta y organiza las citas del centro médico Piedrazul.</p>
   </header>
 
   <div class="login-panel">
-    <app-formulario-login [enviando]="cargando()" (login)="onLogin($event)" />
-
-    <p class="registro-link">
-      ¿No tienes cuenta? <a routerLink="/registro">Regístrate</a>
-    </p>
+    @if (usaFormularioPropio) {
+      <app-formulario-login [enviando]="cargando()" (login)="onLogin($event)" />
+    } @else {
+      <div class="acceso-sso">
+        <p>Ingresa con tu cuenta de Piedrazul. Te llevaremos a la página segura de acceso y volverás aquí al terminar.</p>
+        <app-button
+          [label]="cargando() ? 'Abriendo acceso…' : 'Iniciar sesión'"
+          [disabled]="cargando()"
+          (clicked)="iniciarConKeycloak()"
+        />
+      </div>
+    }
 
     @if (error()) {
-      <p class="mensaje error">{{ error() }}</p>
+      <p class="aviso aviso--error" role="alert">{{ error() }}</p>
     }
+
+    <p class="registro-link">
+      ¿Eres paciente y no tienes cuenta? <a routerLink="/registro">Crea tu cuenta</a>
+    </p>
   </div>
 </section>

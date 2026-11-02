@@ -1,25 +1,41 @@
+.grupo + .grupo {
+  margin-top: 1rem;
+}
+
+.grupo__nombre {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .franjas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 0.25rem 0 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.5rem;
 }
 
 .franja {
-  padding: 0.7rem 0.9rem;
+  padding: 0.7rem 0.5rem;
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.15);
+  background: #fff;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--accent);
+  }
 
   &--seleccionada {
     background: var(--ink);
-    color: #f8f5f2;
+    color: #f8fafc;
     border-color: var(--ink);
   }
 }
 
 .vacio {
+  margin: 0;
   color: var(--ink-soft);
 }

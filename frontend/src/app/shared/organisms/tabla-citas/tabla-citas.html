@@ -1,57 +1,67 @@
 @if (citas().length) {
-  <table class="tabla-citas">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Hora inicio</th>
-        <th>Hora fin</th>
-        <th>Estado</th>
-        <th>{{ vistaPaciente() ? 'Médico/terapista' : 'Paciente' }}</th>
-        @if (mostrarCancelar() || mostrarReagendar() || mostrarEliminar()) {
-          <th>Acciones</th>
-        }
-      </tr>
-    </thead>
-    <tbody>
-      @for (cita of citas(); track cita.id) {
-        <tr [class.fila-cancelada]="cita.estado === 'Cancelada'">
-          <td>{{ cita.fecha | date: 'dd/MM/yyyy' }}</td>
-          <td>{{ cita.horaInicio }}</td>
-          <td>{{ cita.horaFin }}</td>
-          <td><app-badge-estado [estado]="cita.estado" /></td>
-          <td>{{ vistaPaciente() ? (cita.nombreMedico || '—') : (cita.pacienteNombre || '—') }}</td>
-          @if (mostrarCancelar() || mostrarReagendar() || mostrarEliminar()) {
-            <td>
-              <div class="acciones">
-              @if (mostrarCancelar() && cita.estado !== 'Cancelada' && cita.estado !== 'Atendida') {
-                <app-button
-                  label="Cancelar"
-                  variant="danger"
-                  (clicked)="cancelarCita.emit(cita.id)"
-                />
-              }
-              @if (mostrarReagendar() && cita.estado === 'Agendada') {
-                <app-button
-                  label="Reagendar"
-                  variant="secondary"
-                  (clicked)="reagendarCita.emit(cita.id)"
-                />
-              }
-              @if (mostrarEliminar()) {
-                <app-button
-                  label="Eliminar"
-                  variant="danger"
-                  (clicked)="eliminarCita.emit(cita.id)"
-                />
-              }
-              </div>
-            </td>
+  <div class="contenedor-tabla">
+    <table class="tabla-citas">
+      <thead>
+        <tr>
+          @if (esAgenda()) {
+            <th scope="col" class="num">N.º</th>
+          } @else {
+            <th scope="col">Fecha</th>
+          }
+          <th scope="col">Hora</th>
+          @if (esAgenda()) {
+            <th scope="col">Paciente</th>
+            <th scope="col">Cédula</th>
+          } @else {
+            <th scope="col">Médico/terapista</th>
+          }
+          <th scope="col">Estado</th>
+          @if (hayAcciones()) {
+            <th scope="col"><span class="sr-only">Acciones</span></th>
           }
         </tr>
-      }
-    </tbody>
-  </table>
-  <p class="total">Total de citas: {{ citas().length }}</p>
+      </thead>
+      <tbody>
+        @for (cita of citas(); track cita.id; let i = $index) {
+          <tr [class.fila-cancelada]="cita.estado === 'Cancelada'">
+            @if (esAgenda()) {
+              <td class="num">{{ i + 1 }}</td>
+            } @else {
+              <td class="fecha">{{ cita.fecha | date: 'EEE d MMM y' }}</td>
+            }
+            <td class="hora">{{ cita.horaInicio | hora }}–{{ cita.horaFin | hora }}</td>
+            @if (esAgenda()) {
+              <td>{{ cita.pacienteNombre || '—' }}</td>
+              <td class="documento">{{ cita.pacienteDocumento || '—' }}</td>
+            } @else {
+              <td>
+                {{ cita.nombreMedico || '—' }}
+                @if (cita.especialidadMedico) {
+                  <span class="especialidad">{{ cita.especialidadMedico }}</span>
+                }
+              </td>
+            }
+            <td><app-badge-estado [estado]="cita.estado" /></td>
+            @if (hayAcciones()) {
+              <td>
+                <div class="acciones">
+                  @if (mostrarReagendar() && cita.estado === 'Agendada') {
+                    <app-button label="Reagendar" variant="secondary" (clicked)="reagendarCita.emit(cita.id)" />
+                  }
+                  @if (mostrarCancelar() && cita.estado !== 'Cancelada' && cita.estado !== 'Atendida') {
+                    <app-button label="Cancelar" variant="danger" (clicked)="cancelarCita.emit(cita.id)" />
+                  }
+                  @if (mostrarEliminar()) {
+                    <app-button label="Eliminar" variant="danger" (clicked)="eliminarCita.emit(cita.id)" />
+                  }
+                </div>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 } @else {
-  <p class="vacio">No hay citas para ese médico/terapista en esa fecha.</p>
+  <p class="vacio">{{ mensajeVacio() }}</p>
 }

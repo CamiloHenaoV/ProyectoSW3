@@ -1,40 +1,96 @@
-<section class="pagina pagina--directory">
+<section class="pagina">
   <header class="page-header">
-    <div>
-      <p class="eyebrow">Directorio médico</p>
-      <h2>Agenda con especialistas</h2>
-    </div>
+    <p class="eyebrow">Agenda</p>
+    <h2>Citas del día por profesional</h2>
     <p class="page-intro">
-      Selecciona un profesional y una fecha para revisar la disponibilidad de la agenda con un enfoque claro y contemporáneo.
+      Consulta las citas de un médico o terapista en una fecha y descarga el listado para organizar la llegada de los pacientes.
     </p>
   </header>
 
-  <div class="toolbar-panel">
+  <div class="panel">
     <app-filtro-fecha-medico
       [medicos]="medicos()"
       [medicoId]="medicoId()"
       [fecha]="fecha()"
+      [bloquearMedico]="medicoBloqueado()"
+      [cargando]="cargando()"
       (medicoIdChange)="medicoId.set($event)"
       (fechaChange)="fecha.set($event)"
       (buscar)="buscar()"
     />
   </div>
 
-  @if (mensajeError()) {
-    <p class="error">{{ mensajeError() }}</p>
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
   }
   @if (cargando()) {
-    <p class="status">Cargando...</p>
+    <p class="estado-carga">Consultando citas…</p>
   }
 
-  <div class="results-meta">
-    <span>Mostrando</span>
-    <strong>{{ citas().length }} cita(s)</strong>
-  </div>
+  @if (consulta()) {
+    <section class="resultados" aria-live="polite">
+      <div class="resultados__encabezado">
+        <div>
+          <h3>{{ tituloResultados() }}</h3>
+          <p class="total">
+            <strong>{{ citas().length }}</strong> {{ citas().length === 1 ? 'cita' : 'citas' }} en total
+            @if (hayFiltros()) {
+              · mostrando {{ citasVisibles().length }}
+            }
+          </p>
+        </div>
 
-  <app-tabla-citas
-    [citas]="citas()"
-    [mostrarEliminar]="esAdministrador()"
-    (eliminarCita)="eliminar($event)"
-  />
+        <div class="exportar">
+          <app-select-field
+            placeholder=""
+            ariaLabel="Formato del archivo"
+            [options]="formatos"
+            [value]="formato()"
+            (valueChange)="formato.set($event)"
+          />
+          <app-button
+            [label]="'Exportar ' + citasVisibles().length + (citasVisibles().length === 1 ? ' cita' : ' citas')"
+            variant="secondary"
+            [disabled]="!citasVisibles().length"
+            (clicked)="exportar()"
+          />
+        </div>
+      </div>
+
+      @if (avisoExportacion()) {
+        <p class="aviso aviso--exito" role="status">{{ avisoExportacion() }}</p>
+      }
+
+      @if (citas().length) {
+        <div class="filtros">
+          <app-filtro-estados
+            [estados]="estados"
+            [conteos]="conteos()"
+            [total]="citas().length"
+            [seleccionado]="filtroEstado()"
+            (cambiar)="filtroEstado.set($event)"
+          />
+          <app-input-field
+            type="search"
+            placeholder="Filtrar por paciente o cédula"
+            ariaLabel="Filtrar por paciente o cédula"
+            [value]="filtroTexto()"
+            (valueChange)="filtroTexto.set($event)"
+          />
+        </div>
+      }
+
+      <app-tabla-citas
+        modo="agenda"
+        [citas]="citasVisibles()"
+        [mensajeVacio]="mensajeVacio()"
+        [mostrarCancelar]="puedeCancelar()"
+        [mostrarEliminar]="esAdministrador()"
+        (cancelarCita)="cancelar($event)"
+        (eliminarCita)="eliminar($event)"
+      />
+    </section>
+  } @else if (!cargando()) {
+    <p class="aviso">Elige un profesional y una fecha, y pulsa «Buscar citas».</p>
+  }
 </section>

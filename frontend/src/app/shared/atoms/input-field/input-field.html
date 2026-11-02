@@ -5,6 +5,9 @@
   [placeholder]="placeholder()"
   [value]="value()"
   [required]="required()"
+  [disabled]="disabled()"
   [attr.min]="min()"
+  [attr.max]="max()"
+  [attr.aria-label]="ariaLabel() || null"
   (input)="onInput($event)"
 />

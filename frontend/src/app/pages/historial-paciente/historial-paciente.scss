@@ -1,0 +1,66 @@
+.buscador {
+  max-width: 560px;
+}
+
+.resultado {
+  display: grid;
+  gap: 1rem;
+}
+
+.resultado > * {
+  min-width: 0;
+}
+
+.ficha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.ficha h3 {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.documento {
+  margin: 0.4rem 0 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.cifras {
+  display: flex;
+  gap: 1.6rem;
+  margin: 0;
+}
+
+.cifras div {
+  display: grid;
+  text-align: right;
+}
+
+.cifras dt {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.cifras dd {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.proxima {
+  border-left-color: var(--accent);
+}
+
+.proxima strong {
+  color: var(--ink);
+}

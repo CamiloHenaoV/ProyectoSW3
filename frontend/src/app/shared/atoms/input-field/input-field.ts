@@ -11,7 +11,10 @@ export class InputField {
   name = input<string>('');
   placeholder = input<string>('');
   required = input(false);
+  disabled = input(false);
   min = input<string | number | null>(null);
+  max = input<string | number | null>(null);
+  ariaLabel = input<string>('');
 
   valueChange = output<string>();
 

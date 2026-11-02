@@ -1,14 +1,17 @@
 <div class="filtro">
-  <app-select-field
-    placeholder="Médico/Terapista"
-    [options]="opciones()"
-    [value]="medicoId()"
-    (valueChange)="medicoIdChange.emit($event)"
-  />
-  <app-input-field
-    type="date"
-    [value]="fecha()"
-    (valueChange)="fechaChange.emit($event)"
-  />
-  <app-button label="Buscar" (clicked)="buscar.emit()" />
+  <label class="campo">
+    <span>Médico o terapista</span>
+    <app-select-field
+      placeholder="Selecciona un profesional"
+      [options]="opciones()"
+      [value]="medicoId()"
+      [disabled]="bloquearMedico()"
+      (valueChange)="medicoIdChange.emit($event)"
+    />
+  </label>
+  <label class="campo">
+    <span>Fecha</span>
+    <app-input-field type="date" [value]="fecha()" (valueChange)="fechaChange.emit($event)" />
+  </label>
+  <app-button label="Buscar citas" [disabled]="cargando()" (clicked)="buscar.emit()" />
 </div>

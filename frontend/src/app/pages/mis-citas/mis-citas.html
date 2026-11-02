@@ -2,26 +2,28 @@
   <header class="page-header">
     <p class="eyebrow">Paciente</p>
     <h2>Mis citas</h2>
+    <p class="page-intro">Revisa tus citas, cámbialas de horario o cancélalas si no puedes asistir.</p>
   </header>
 
   @if (mensaje()) {
-    <p class="mensaje">{{ mensaje() }}</p>
+    <p class="aviso" [class.aviso--error]="mensajeEsError()" [class.aviso--exito]="mensajeEsExito()" role="status">{{ mensaje() }}</p>
   }
 
   <app-tabla-citas
     [citas]="citas()"
     [mostrarCancelar]="true"
     [mostrarReagendar]="true"
-    [vistaPaciente]="true"
+    modo="paciente"
+    mensajeVacio="Todavía no tienes citas. Agenda la primera desde «Agendar cita»."
     (cancelarCita)="cancelar($event)"
     (reagendarCita)="iniciarReagendamiento($event)"
   />
 
   @if (citaReagendando(); as cita) {
-    <section class="reagendar-panel">
+    <section class="panel reagendar-panel">
       <div>
         <h3>Reagendar cita con {{ cita.nombreMedico }}</h3>
-        <p>Selecciona una fecha futura y consulta los horarios disponibles.</p>
+        <p>Elige una nueva fecha y consulta los horarios libres.</p>
       </div>
       <div class="reagendar-controles">
         <label>
@@ -41,7 +43,7 @@
       </div>
 
       @if (cargandoFranjas()) {
-        <p>Consultando horarios disponibles...</p>
+        <p class="estado-carga">Consultando horarios disponibles…</p>
       }
 
       @if (franjas().length) {

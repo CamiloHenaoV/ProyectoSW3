@@ -22,5 +22,19 @@ services:
     depends_on:
       - mongo
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    container_name: piedrazul-keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    ports:
+      - "8080:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+
 volumes:
   mongo_data:

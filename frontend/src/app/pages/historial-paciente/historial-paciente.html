@@ -1,0 +1,60 @@
+<section class="pagina">
+  <header class="page-header">
+    <p class="eyebrow">Pacientes</p>
+    <h2>Historial de citas</h2>
+    <p class="page-intro">Busca al paciente por su cédula para ver todas las citas que ha tenido en Piedrazul.</p>
+  </header>
+
+  <div class="panel buscador">
+    <app-autocompletar-paciente
+      [sugerencias]="sugerencias()"
+      [cargando]="buscandoSugerencias()"
+      (buscar)="buscarSugerencias($event)"
+      (seleccionar)="seleccionarPaciente($event)"
+      (consultar)="consultarDocumento($event)"
+    />
+  </div>
+
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+  }
+  @if (cargando()) {
+    <p class="estado-carga">Consultando historial…</p>
+  }
+
+  @if (documentoConsultado() && !cargando() && !error()) {
+    <section class="resultado" aria-live="polite">
+      <div class="ficha">
+        <div>
+          <h3>{{ nombrePaciente() || 'Paciente' }}</h3>
+          <p class="documento">C.C. {{ documentoConsultado() }}</p>
+        </div>
+        <dl class="cifras">
+          <div><dt>Citas</dt><dd>{{ historial().length }}</dd></div>
+          <div><dt>Atendidas</dt><dd>{{ conteos()['Atendida'] ?? 0 }}</dd></div>
+          <div><dt>Canceladas</dt><dd>{{ conteos()['Cancelada'] ?? 0 }}</dd></div>
+        </dl>
+      </div>
+
+      @if (proximaCita()) {
+        <p class="aviso proxima"><strong>Próxima cita:</strong> {{ textoProximaCita() }}</p>
+      }
+
+      @if (historial().length) {
+        <app-filtro-estados
+          [estados]="estados"
+          [conteos]="conteos()"
+          [total]="historial().length"
+          [seleccionado]="filtroEstado()"
+          (cambiar)="filtroEstado.set($event)"
+        />
+      }
+
+      <app-tabla-citas
+        modo="historial"
+        [citas]="citasVisibles()"
+        [mensajeVacio]="historial().length ? 'Ninguna cita con ese estado.' : 'Este paciente todavía no tiene citas registradas.'"
+      />
+    </section>
+  }
+</section>

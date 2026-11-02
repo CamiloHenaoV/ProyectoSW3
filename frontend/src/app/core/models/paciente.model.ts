@@ -13,3 +13,6 @@ export interface Paciente {
   telefono: string;
   email: string;
 }
+
+/** Resultado del autocompletado por cédula (RF5). */
+export type PacienteResumen = Pick<Paciente, 'id' | 'nombre' | 'documentoIdentidad'>;
