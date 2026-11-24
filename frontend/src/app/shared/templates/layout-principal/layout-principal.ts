@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
-import { ETIQUETA_ROL, ROLES_AGENDA, ROLES_HISTORIAL, Rol } from '../../../core/auth/roles';
+import { ETIQUETA_ROL, ROLES_AGENDA, ROLES_HISTORIAL, ROLES_REPORTES, Rol } from '../../../core/auth/roles';
 
 interface EnlaceNavegacion {
   ruta: string;
@@ -36,6 +36,9 @@ export class LayoutPrincipal {
     }
     if (this.authService.tieneAlgunRol(ROLES_HISTORIAL)) {
       enlaces.push({ ruta: '/historial', etiqueta: 'Historial por cédula' });
+    }
+    if (this.authService.tieneAlgunRol(ROLES_REPORTES)) {
+      enlaces.push({ ruta: '/reportes', etiqueta: 'Reportes' });
     }
     if (this.authService.tieneRol(Rol.Administrador)) {
       enlaces.push({ ruta: '/admin/configuracion', etiqueta: 'Configuración' });

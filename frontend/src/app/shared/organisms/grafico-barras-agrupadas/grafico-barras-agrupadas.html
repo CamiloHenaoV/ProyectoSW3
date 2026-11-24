@@ -1,0 +1,92 @@
+@let g = geometria();
+
+@if (series().length > 1) {
+  <ul class="leyenda" aria-label="Leyenda">
+    @for (serie of series(); track serie.id) {
+      <li>
+        <span class="leyenda__muestra" [style.background]="serie.color" aria-hidden="true"></span>
+        <span class="leyenda__nombre">{{ serie.etiqueta }}</span>
+        <span class="leyenda__total">{{ formatear(serie.total) }}</span>
+      </li>
+    }
+  </ul>
+}
+
+<div class="lienzo" (mouseleave)="bandaActiva.set(null)">
+  <svg
+    class="grafico"
+    [attr.viewBox]="'0 0 ' + ancho + ' ' + alto"
+    role="group"
+    [attr.aria-label]="titulo()"
+  >
+    <!-- Cuadrícula y eje Y: líneas finas y recesivas -->
+    <g class="eje" aria-hidden="true">
+      @for (marca of g.marcasY; track marca.valor) {
+        <line class="eje__linea" [class.eje__linea--base]="marca.valor === 0" [attr.x1]="g.izquierda" [attr.x2]="g.derecha" [attr.y1]="marca.y" [attr.y2]="marca.y" />
+        <text class="eje__texto" [attr.x]="g.izquierda - 8" [attr.y]="marca.y" text-anchor="end" dominant-baseline="middle">{{ marca.texto }}</text>
+      }
+    </g>
+
+    <!-- Lavado del mes activo -->
+    @if (bandaActiva() !== null) {
+      @let activa = g.bandas[bandaActiva()!];
+      <rect class="banda-activa" [attr.x]="activa.x" [attr.y]="g.arriba" [attr.width]="activa.ancho" [attr.height]="g.base - g.arriba" aria-hidden="true" />
+    }
+
+    <g aria-hidden="true">
+      @for (barra of g.barras; track barra.serieId + '-' + barra.categoria) {
+        <path
+          class="barra"
+          [class.barra--atenuada]="bandaActiva() !== null && bandaActiva() !== barra.categoria"
+          [attr.d]="barra.trazo"
+          [attr.fill]="barra.color"
+        />
+      }
+
+      @if (g.destacada; as d) {
+        <text class="valor-destacado" [attr.x]="d.x + d.ancho / 2" [attr.y]="d.y - 6" text-anchor="middle">{{ formatear(d.valor) }}</text>
+      }
+    </g>
+
+    <!-- Etiquetas de los meses -->
+    <g aria-hidden="true">
+      @for (banda of g.bandas; track banda.indice) {
+        <text class="eje__texto eje__texto--x" [class.eje__texto--activo]="bandaActiva() === banda.indice" [attr.x]="banda.centro" [attr.y]="g.base + 20" text-anchor="middle">{{ banda.etiqueta }}</text>
+      }
+    </g>
+
+    <!-- Zonas de interacción: todo el alto del mes, más grandes que las barras -->
+    @for (banda of g.bandas; track banda.indice) {
+      <rect
+        class="zona"
+        tabindex="0"
+        role="img"
+        [attr.aria-label]="banda.descripcion"
+        [attr.x]="banda.x"
+        [attr.y]="g.arriba"
+        [attr.width]="banda.ancho"
+        [attr.height]="g.base - g.arriba + 26"
+        (mouseenter)="activar(banda.indice)"
+        (focus)="activar(banda.indice)"
+        (blur)="desactivar(banda.indice)"
+      />
+    }
+  </svg>
+
+  @if (tooltip(); as t) {
+    <div class="tooltip" [style.left]="t.izquierda" [style.right]="t.derecha" role="status">
+      <p class="tooltip__titulo">{{ t.titulo }} · <strong>{{ formatear(t.total) }}</strong> {{ unidad() }}</p>
+      @if (t.filas.length > 1) {
+        <ul>
+          @for (fila of t.filas; track fila.id) {
+            <li>
+              <span class="tooltip__clave" [style.background]="fila.color" aria-hidden="true"></span>
+              <strong>{{ formatear(fila.valor) }}</strong>
+              <span>{{ fila.etiqueta }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

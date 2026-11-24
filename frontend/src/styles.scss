@@ -186,3 +186,24 @@ a {
   color: var(--ink-soft);
   font-size: 0.92rem;
 }
+
+/* ---------- Impresión (RF7: el reporte se imprime o se guarda como PDF) ---------- */
+@media print {
+  .topbar,
+  .saltar,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .pagina {
+    max-width: none;
+  }
+
+  .panel {
+    break-inside: avoid;
+  }
+}

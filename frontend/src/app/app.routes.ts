@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthService } from './core/auth/auth.service';
 import { autenticadoGuard, invitadoGuard, rolesGuard } from './core/auth/auth.guards';
-import { ROLES_AGENDA, ROLES_HISTORIAL, Rol } from './core/auth/roles';
+import { ROLES_AGENDA, ROLES_HISTORIAL, ROLES_REPORTES, Rol } from './core/auth/roles';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: () => inject(AuthService).rutaInicio() },
@@ -44,6 +44,13 @@ export const routes: Routes = [
     canActivate: [rolesGuard(...ROLES_HISTORIAL)],
     title: 'Historial por cédula · Piedrazul',
     loadComponent: () => import('./pages/historial-paciente/historial-paciente').then((m) => m.HistorialPaciente)
+  },
+  {
+    // RF7
+    path: 'reportes',
+    canActivate: [rolesGuard(...ROLES_REPORTES)],
+    title: 'Reporte de citas · Piedrazul',
+    loadComponent: () => import('./pages/reporte-citas/reporte-citas').then((m) => m.ReporteCitas)
   },
   {
     // RF3

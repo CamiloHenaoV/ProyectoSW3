@@ -20,6 +20,9 @@ export const ROLES_AGENDA: readonly Rol[] = [Rol.Agendador, Rol.Administrador, R
 /** Quienes consultan el historial de citas de un paciente por cédula (RF5). */
 export const ROLES_HISTORIAL: readonly Rol[] = [Rol.Agendador, Rol.Administrador, Rol.Medico, Rol.Terapista];
 
+/** Quienes generan el reporte gráfico de citas por mes y médico (RF7). */
+export const ROLES_REPORTES: readonly Rol[] = [Rol.Medico, Rol.Terapista, Rol.Administrador];
+
 export const ETIQUETA_ROL: Record<Rol, string> = {
   Paciente: 'Paciente',
   Agendador: 'Agendador',

@@ -1,0 +1,111 @@
+<section class="pagina pagina--ancha">
+  <header class="page-header">
+    <p class="eyebrow">Reportes</p>
+    <h2>Citas por mes y profesional</h2>
+    <p class="page-intro">
+      Compara cuántas citas tuvo cada médico o terapista en cada mes del año. Elige el año y, si quieres, un profesional.
+    </p>
+  </header>
+
+  <div class="panel filtros no-imprimir" role="group" aria-label="Filtros del reporte">
+    <label class="campo campo--anio">
+      <span>Año</span>
+      <app-select-field
+        placeholder=""
+        ariaLabel="Año del reporte"
+        [options]="opcionesAnio"
+        [value]="'' + anio()"
+        (valueChange)="cambiarAnio($event)"
+      />
+    </label>
+    <label class="campo campo--medico">
+      <span>Profesional</span>
+      <app-select-field
+        placeholder=""
+        ariaLabel="Profesional"
+        [options]="opcionesMedico()"
+        [value]="medicoId()"
+        (valueChange)="cambiarMedico($event)"
+      />
+    </label>
+    <label class="casilla">
+      <input type="checkbox" [checked]="incluirCanceladas()" (change)="cambiarCanceladas($event)" />
+      <span>Incluir citas canceladas</span>
+    </label>
+    <div class="acciones">
+      <app-button label="Imprimir reporte" variant="secondary" [disabled]="!reporte()?.total" (clicked)="imprimir()" />
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+  }
+
+  @if (reporte(); as r) {
+    <section class="resultado" [class.resultado--cargando]="cargando()" [attr.aria-busy]="cargando()" aria-live="polite">
+      <div class="resultado__encabezado">
+        <h3>Citas en {{ r.anio }}</h3>
+        <p>{{ subtitulo() }}</p>
+      </div>
+
+      @if (resumen(); as s) {
+        <dl class="cifras">
+          <div>
+            <dt>Total de citas</dt>
+            <dd>{{ formatear(s.total) }}</dd>
+          </div>
+          <div>
+            <dt>Mes con más citas</dt>
+            <dd>
+              @if (s.mesPico; as pico) {
+                <span class="cifras__texto">{{ pico.mes }}</span> <small>{{ formatear(pico.cantidad) }}</small>
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Promedio por mes con citas</dt>
+            <dd>{{ formatear(s.promedioMensual) }}</dd>
+          </div>
+          @if (r.medicos.length > 1) {
+            <div>
+              <dt>Profesional con más citas</dt>
+              <dd>
+                @if (s.profesionalLider; as lider) {
+                  <span class="cifras__texto cifras__texto--nombre">{{ lider.nombre }}</span> <small>{{ formatear(lider.cantidad) }}</small>
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+      }
+
+      @if (r.total > 0) {
+        <div class="panel">
+          <app-grafico-barras-agrupadas
+            [series]="series()"
+            [categorias]="meses"
+            [categoriasLargas]="mesesLargos"
+            [titulo]="tituloGrafico()"
+            unidad="citas"
+          />
+        </div>
+
+        <h4 class="subtitulo-tabla">Detalle por mes</h4>
+        <app-tabla-reporte-citas
+          [series]="series()"
+          [totalesPorMes]="r.totalesPorMes"
+          [total]="r.total"
+          [titulo]="'Cantidad de citas por mes y profesional en ' + r.anio"
+        />
+      } @else {
+        <p class="aviso">No hay citas registradas en {{ r.anio }} con los filtros elegidos.</p>
+      }
+    </section>
+  } @else if (cargando()) {
+    <p class="estado-carga">Generando reporte…</p>
+  }
+</section>

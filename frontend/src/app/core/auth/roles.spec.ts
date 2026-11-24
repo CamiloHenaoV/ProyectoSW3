@@ -1,4 +1,4 @@
-import { Rol, filtrarRolesDelSistema, rutaInicioPorRoles } from './roles';
+import { ROLES_REPORTES, Rol, filtrarRolesDelSistema, rutaInicioPorRoles } from './roles';
 
 describe('roles', () => {
   it('descarta roles técnicos de Keycloak y duplicados', () => {
@@ -14,5 +14,10 @@ describe('roles', () => {
     expect(rutaInicioPorRoles([Rol.Terapista])).toBe('/citas');
     expect(rutaInicioPorRoles([Rol.Agendador, Rol.Administrador])).toBe('/admin/configuracion');
     expect(rutaInicioPorRoles([])).toBe('/no-autorizado');
+  });
+
+  it('el reporte de citas por mes (RF7) es para médicos, terapistas y administrador, no para pacientes', () => {
+    expect(ROLES_REPORTES).toEqual([Rol.Medico, Rol.Terapista, Rol.Administrador]);
+    expect(ROLES_REPORTES).not.toContain(Rol.Paciente);
   });
 });

@@ -16,6 +16,7 @@ Proyecto del curso Ingeniería de Software III — Universidad del Cauca, Facult
 6. [API REST](#6-api-rest)
 7. [Release 1 — Primer corte](#7-release-1--primer-corte)
 8. [Release 2 — Segundo corte](#8-release-2--segundo-corte)
+9. [Release 3 — Tercer corte](#9-release-3--tercer-corte)
 
 
 ---
@@ -38,8 +39,8 @@ Las franjas que ve el paciente se calculan automáticamente según la configurac
 |---|---|---|
 | Paciente | Registrarse, iniciar sesión, agendar citas y ver sus citas | /agendar |
 | Agendador | Listar y exportar las citas de un médico o terapista por fecha; consultar el historial de un paciente por cédula | /citas |
-| Médico / Terapista | Consultar y exportar su propia agenda; consultar el historial de un paciente por cédula | /citas |
-| Administrador | Configurar la disponibilidad de cada profesional, consultar agendas e historiales | /admin/configuracion |
+| Médico / Terapista | Consultar y exportar su propia agenda; consultar el historial de un paciente por cédula; generar el reporte gráfico de citas por mes | /citas |
+| Administrador | Configurar la disponibilidad de cada profesional, consultar agendas, historiales y el reporte de citas por mes | /admin/configuracion |
 
 ### Pantallas
 
@@ -51,6 +52,7 @@ Las franjas que ve el paciente se calculan automáticamente según la configurac
 | /mis-citas | Historial de citas del paciente | Paciente |
 | /citas | Listado de citas por médico y fecha, con exportación a CSV | Agendador, Médico, Terapista, Administrador |
 | /historial | Historial de citas de un paciente por cédula | Agendador, Médico, Terapista, Administrador |
+| /reportes | Reporte gráfico de cantidad de citas por mes y profesional en un año (RF7) | Médico, Terapista, Administrador |
 | /admin/configuracion | Parámetros de agendamiento por médico | Administrador |
 | /no-autorizado | Aviso cuando el rol no tiene acceso a una sección | Autenticado |
 
@@ -250,6 +252,7 @@ Todas las rutas cuelgan de /api. Salvo las rutas públicas, requieren el encabez
 | PUT | /citas/{id}/reagendar | Paciente (propia) | Cambia la fecha y la franja de una cita agendada |
 | PUT | /citas/{id}/cancelar | Paciente (propia), Agendador, Administrador | Cancela una cita que no esté cancelada ni atendida |
 | DELETE | /citas/{id} | Administrador | Elimina una cita |
+| GET | /reportes/citas-por-mes?anio=&incluirCanceladas=&medicoId= | Médico, Terapista, Administrador | Cantidad de citas por mes y profesional en un año (RF7) |
 | GET | /configuracion | Administrador | Lista todas las configuraciones de médicos |
 | GET | /configuracion/{medicoId} | Administrador | Consulta de configuración |
 | PUT | /configuracion | Administrador | Creación o actualización de configuración |
@@ -376,3 +379,64 @@ Resultado actual verificado: 4 pruebas del backend ejecutándose correctamente c
 ### 8.2 Documentación
 
 - [frontend/README.md](frontend/README.md): ejecución, arquitectura del frontend, patrones GoF, escenarios de calidad de seguridad y pruebas.
+
+---
+
+## 9. Release 3 — Tercer corte
+
+### 9.1 Alcance
+
+| Requisito | Descripción | Estado |
+|---|---|---|
+| RF7 | Reporte gráfico de cantidad de citas por mes y médico/terapista, eligiendo el año | Implementado (backend + frontend) |
+| RF6 | Cancelación de citas por el paciente con justificación y dos días de anticipación | Pendiente |
+| RNF del tercer corte | Pruebas de la pirámide, CI/CD, despliegue en la nube, monitoreo | Pendiente |
+
+### 9.2 Historia de usuario
+
+**HU-07 · Reporte gráfico de citas por mes y médico (RF7)**
+Como médico o terapista, quiero generar un reporte gráfico de la cantidad de citas por mes y por profesional en un año para analizar la demanda de atención.
+
+- Dado que inicié sesión como Médico, Terapista o Administrador, cuando abro «Reportes», entonces veo el reporte del año actual con un gráfico de barras: un grupo por mes y una barra por profesional.
+- Dado que elijo otro año, entonces el gráfico, las cifras y la tabla se recalculan solo con las citas de ese año.
+- Dado que elijo un profesional, entonces el reporte muestra únicamente sus citas, conservando el mismo color que tenía en el reporte general.
+- Dado que no marco «Incluir citas canceladas», entonces las citas canceladas no se cuentan; al marcarlo, sí.
+- Dado que paso el puntero o enfoco con el teclado un mes, entonces veo cuántas citas tuvo cada profesional en ese mes y el total.
+- Dado que el año elegido no tiene citas, entonces el sistema lo indica con un mensaje en lugar de un gráfico vacío.
+- Dado que necesito el reporte en papel o PDF, cuando pulso «Imprimir reporte», entonces se imprime sin el menú ni los filtros.
+- Dado que soy Paciente o Agendador, cuando intento abrir `/reportes` o llamar `GET /api/reportes/citas-por-mes`, entonces el sistema me lo niega (pantalla «Sin permiso» y 403 en la API).
+
+### 9.3 Diseño
+
+```mermaid
+flowchart LR
+    P[pages/reporte-citas] --> RS[ReportesService]
+    P --> G[organisms/grafico-barras-agrupadas]
+    P --> T[organisms/tabla-reporte-citas]
+    RS -- "GET /api/reportes/citas-por-mes" --> C[ReportesController]
+    C --> S[ReporteCitasService]
+    S --> R[IReporteCitasRepository]
+    S --> M[IMedicoRepository]
+    R -- "aggregate: $match + $group (médico, mes, estado)" --> DB[(MongoDB · citas)]
+```
+
+| Decisión | Por qué |
+|---|---|
+| La agregación se hace en MongoDB (`$match` por año + `$group` por médico, mes y estado) | La API recibe como máximo médicos × 12 × estados documentos, no todas las citas del año |
+| `IReporteCitasRepository` separado de `ICitaRepository` (ISP) | Las consultas de lectura para reportes no obligan a los repositorios de escritura ni a sus dobles de prueba a implementarlas |
+| `ReporteCitasService` separado de `CitaService` (SRP) | Consolidar conteos para un gráfico es una responsabilidad distinta del ciclo de vida de la cita |
+| El gráfico es un organismo genérico (series + categorías), sin dependencias externas | Se puede reutilizar para otros reportes; no se agregó ninguna librería de gráficos al bundle |
+| El color sigue al profesional, no a su posición | Filtrar por un profesional no le cambia el color; la paleta se validó para daltonismo |
+| Tabla con los mismos datos debajo del gráfico | Los valores no dependen del color ni del puntero (accesibilidad) y se leen al imprimir |
+
+### 9.4 Datos de prueba
+
+`mongo-init/reset-and-seed.js` genera ahora un historial determinista de citas pasadas (año anterior y año actual hasta ayer) para los tres profesionales, respetando sus días y franjas, con ~12 % de canceladas. Así el reporte tiene datos para mostrar en la sustentación. La API simulada del frontend (`npm run mock-api`) también implementa el endpoint.
+
+### 9.5 Pruebas
+
+| Ámbito | Pruebas nuevas |
+|---|---|
+| Backend (xUnit) | `ReporteCitasServiceTests` (agrupación por mes, meses en cero, canceladas, filtro por médico, inactivos, rango de años) y `ReportesControllerTests` (roles autorizados, año por defecto, 400 y 404) |
+| Frontend (Vitest) | Escala del eje, colores estables y agrupación en «Otros», resumen del reporte, geometría y tooltip del gráfico, parámetros del servicio y roles |
+

@@ -1,0 +1,173 @@
+:host {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+}
+
+.leyenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.leyenda__muestra {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.leyenda__nombre {
+  color: var(--ink);
+}
+
+.leyenda__total {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.lienzo {
+  position: relative;
+  overflow-x: auto;
+}
+
+.grafico {
+  display: block;
+  width: 100%;
+  min-width: 720px;
+  height: auto;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.eje__linea {
+  stroke: rgba(15, 23, 42, 0.08);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.eje__linea--base {
+  stroke: rgba(15, 23, 42, 0.28);
+}
+
+.eje__texto {
+  fill: #64748b;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.eje__texto--x {
+  font-size: 12px;
+}
+
+.eje__texto--activo {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.banda-activa {
+  fill: rgba(15, 23, 42, 0.04);
+}
+
+.barra {
+  transition: opacity 0.15s ease;
+}
+
+.barra--atenuada {
+  opacity: 0.35;
+}
+
+.valor-destacado {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.zona {
+  fill: transparent;
+  cursor: default;
+  outline: none;
+}
+
+.zona:focus-visible {
+  stroke: var(--focus);
+  stroke-width: 2;
+}
+
+.tooltip {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+  min-width: 11rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+  pointer-events: none;
+  font-size: 0.84rem;
+}
+
+.tooltip__titulo {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.tooltip__titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.tooltip__titulo strong {
+  color: var(--ink);
+}
+
+.tooltip ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tooltip li {
+  display: grid;
+  grid-template-columns: 12px 2.2rem 1fr;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tooltip li strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tooltip li span:last-child {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* Clave de línea corta, no una caja */
+.tooltip__clave {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+@media print {
+  .tooltip,
+  .banda-activa {
+    display: none;
+  }
+
+  .barra--atenuada {
+    opacity: 1;
+  }
+}

@@ -1,6 +1,6 @@
 # Frontend — Citas Médicas Piedrazul
 
-SPA en Angular 21 para el sistema de reserva de citas de Piedrazul. Este documento describe el estado del **segundo corte**.
+SPA en Angular 21 para el sistema de reserva de citas de Piedrazul. Este documento describe el estado del **segundo corte** y lo agregado en el **tercer corte** (RF7).
 
 ## Contenido
 
@@ -75,6 +75,7 @@ auth: {
 | RF4 · Exportar citas a CSV | `/citas` | Exporta las citas visibles a CSV (formato para Excel con `;` y tildes correctas, o CSV estándar). Incluye una columna «Asistió» vacía para usarla en la jornada. |
 | RF5 · Historial por cédula | `/historial` | Autocompletado de pacientes por cédula, ficha con totales y próxima cita, e historial de la más reciente a la más antigua con filtro por estado. |
 | RNF1 · JWT con Keycloak | todas | OIDC Authorization Code + PKCE, menú y rutas según el rol del token. |
+| RF7 · Reporte gráfico de citas por mes y médico | `/reportes` | Selector de año (y opcionalmente de profesional), gráfico de columnas agrupadas por mes con una barra por profesional, tooltip por mes (también con teclado), cifras clave (total, mes pico, promedio, profesional con más citas), tabla con los mismos datos y botón para imprimir o guardar en PDF. Las canceladas se excluyen salvo que se marque la casilla. |
 
 Mejoras sobre el primer corte:
 
@@ -122,7 +123,8 @@ Decisiones:
 | Paciente | `/agendar`, `/mis-citas` |
 | Agendador | `/citas`, `/historial` |
 | Médico, Terapista | `/citas` (su agenda), `/historial` |
-| Administrador | `/citas`, `/historial`, `/admin/configuracion` |
+| Médico, Terapista (RF7) | `/reportes` |
+| Administrador | `/citas`, `/historial`, `/reportes`, `/admin/configuracion` |
 
 La gestión de usuarios y roles se hace en la consola de Keycloak (http://localhost:8080, `admin` / `admin`) o con Postman contra la Admin REST API, como permite el enunciado.
 
@@ -206,7 +208,8 @@ Principios SOLID aplicados:
 | **Factory Method** | `core/export/exportador.factory.ts`, `core/auth/auth.config.ts` | Centraliza la creación: la fábrica entrega el exportador por id y `crearAuthProvider()` decide qué proveedor inyectar según el entorno. |
 | **Facade** | `core/auth/auth.service.ts` | Componentes, guards e interceptor necesitan sesión, roles, token y ruta de inicio. La fachada ofrece una sola API simple y oculta al proveedor concreto. |
 | **Chain of Responsibility** | `core/auth/auth.interceptor.ts` | Cada petición HTTP pasa por la cadena de interceptores de Angular. Este eslabón agrega el token solo si la petición va a la API y maneja el 401; luego pasa al siguiente. |
-| **Observer** | Signals y RxJS en `historial-paciente.ts` y `layout-principal.ts` | El menú reacciona solo cuando cambia la sesión. El autocompletado observa lo que se escribe (`debounceTime` + `switchMap`) y cancela búsquedas viejas. |
+| **Observer** | Signals y RxJS en `historial-paciente.ts`, `reporte-citas.ts` y `layout-principal.ts` | El menú reacciona solo cuando cambia la sesión. El autocompletado observa lo que se escribe (`debounceTime` + `switchMap`) y cancela búsquedas viejas. En el reporte (RF7), cada cambio de filtro emite una consulta y `switchMap` descarta la respuesta anterior: si se cambia de año rápido, nunca se pinta el año equivocado. |
+| **Composite** (Atomic Design) | `pages/reporte-citas` → `organisms/grafico-barras-agrupadas`, `organisms/tabla-reporte-citas` → `atoms/select-field`, `atoms/button` | La página se arma con piezas presentacionales; el gráfico es genérico (series y categorías) y no sabe nada de citas ni de médicos, así que sirve para otros reportes. |
 
 ---
 
@@ -260,7 +263,7 @@ Principios SOLID aplicados:
 ## 7. Pruebas
 
 ```bash
-npm test             # Vitest, 71 pruebas
+npm test             # Vitest, 89 pruebas
 ```
 
 | Archivo | Qué prueba |
@@ -274,7 +277,9 @@ npm test             # Vitest, 71 pruebas
 | `core/export/*.spec.ts` | CSV (escape RFC 4180, BOM, inyección de fórmulas), fábrica y descarga |
 | `core/utils/*.spec.ts` | Fechas locales, filtros y orden de citas, mensajes de error |
 | `shared/molecules/autocompletar-paciente/*.spec.ts` | Mínimo de caracteres, navegación con teclado, consulta directa |
-| `shared/organisms/*/*.spec.ts` | Validación de configuración (RF3) y de registro |
+| `shared/organisms/*/*.spec.ts` | Validación de configuración (RF3) y de registro; geometría, etiqueta selectiva y tooltip del gráfico (RF7) |
+| `core/utils/escala-grafico.spec.ts`, `reporte-citas.spec.ts` | Eje con marcas enteras, colores estables por profesional, agrupación en «Otros», resumen del reporte (RF7) |
+| `core/services/reportes.service.spec.ts` | Parámetros de `GET /api/reportes/citas-por-mes` (RF7) |
 
 Además, el flujo completo se verificó en un navegador con Keycloak 26.0.7 real y la API simulada, con los cinco roles: login, agenda, filtros, exportación, autocompletado, historial, agendamiento, mis citas, cierre de sesión, redirección por rol y vista móvil.
 

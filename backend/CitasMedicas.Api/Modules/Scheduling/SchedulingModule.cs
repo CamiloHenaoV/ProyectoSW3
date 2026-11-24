@@ -17,6 +17,10 @@ public static class SchedulingModule
 
         services.AddScoped<IGeneradorFranjasStrategy, FranjasFijasStrategy>();
 
+        // RF7: reporte de citas por mes y médico
+        services.AddScoped<IReporteCitasRepository, ReporteCitasRepository>();
+        services.AddScoped<IReporteCitasService, ReporteCitasService>();
+
         return services;
     }
 }

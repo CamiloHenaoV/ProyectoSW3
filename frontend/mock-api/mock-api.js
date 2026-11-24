@@ -47,6 +47,34 @@ const config = [
   { id: 'cf1', medicoId: M1, diasAtencion: [1, 2, 3, 4, 5], horaInicio: '08:00:00', horaFin: '12:00:00', intervaloMinutos: 30, semanasHabilitadas: 4 },
   { id: 'cf2', medicoId: M2, diasAtencion: [1, 3, 5], horaInicio: '14:00:00', horaFin: '18:00:00', intervaloMinutos: 20, semanasHabilitadas: 6 }
 ];
+// RF7: historial sintético (determinista) para que el reporte por mes tenga datos en cualquier año.
+function citasHistoricas(medicoId, anio, mes) {
+  const semilla = (medicoId.charCodeAt(medicoId.length - 1) * 31 + anio * 7 + mes * 13) % 97;
+  const base = medicoId === M1 ? 18 : 11;
+  const estacional = [0, 2, 5, 3, 1, -2, -4, 1, 4, 6, 3, -5][mes];
+  const total = Math.max(0, base + estacional + (semilla % 7) - 3);
+  const canceladas = semilla % 4;
+  return { total, canceladas };
+}
+function reporteCitasPorMes(anio, incluirCanceladas, medicoId) {
+  const actual = new Date().getFullYear();
+  const mesActual = new Date().getMonth();
+  const elegidos = medicos.filter((m) => !medicoId || m.id === medicoId);
+  const series = elegidos.map((m) => {
+    const porMes = Array.from({ length: 12 }, (_, mes) => {
+      // Citas reales del mock en ese mes
+      const reales = citas.filter((c) => c.medicoId === m.id && c.fecha.startsWith(`${anio}-${String(mes + 1).padStart(2, '0')}`))
+        .filter((c) => incluirCanceladas || c.estado !== 'Cancelada').length;
+      // Historial sintético solo para meses ya cerrados
+      if (anio > actual || (anio === actual && mes >= mesActual)) return reales;
+      const h = citasHistoricas(m.id, anio, mes);
+      return reales + h.total + (incluirCanceladas ? h.canceladas : 0);
+    });
+    return { medicoId: m.id, nombreMedico: m.nombre, especialidad: m.especialidad, citasPorMes: porMes, total: porMes.reduce((a, b) => a + b, 0) };
+  });
+  const totalesPorMes = Array.from({ length: 12 }, (_, i) => series.reduce((s, x) => s + x.citasPorMes[i], 0));
+  return { anio, incluyeCanceladas: incluirCanceladas, medicos: series, totalesPorMes, total: totalesPorMes.reduce((a, b) => a + b, 0) };
+}
 function payload(req) {
   const t = (req.headers.authorization || '').replace('Bearer ', '');
   try { return JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString()); } catch { return null; }
@@ -96,6 +124,13 @@ http.createServer((req, res) => {
     }
     if (pathname === '/api/pacientes/buscar') {
       return send(res, 200, pacientes.filter((x) => x.documentoIdentidad.startsWith(query.documento || '')).slice(0, Number(query.limite || 8)));
+    }
+    if (pathname === '/api/reportes/citas-por-mes') {
+      if (!tiene('Medico', 'Terapista', 'Administrador')) return send(res, 403, { detail: 'Prohibido' });
+      const anio = Number(query.anio || new Date().getFullYear());
+      if (!Number.isInteger(anio) || anio < 2000 || anio > new Date().getFullYear() + 1) return send(res, 400, { mensaje: 'El año no es válido.' });
+      if (query.medicoId && !medicos.some((m) => m.id === query.medicoId)) return send(res, 404, { mensaje: 'No existe el médico o terapista seleccionado.' });
+      return send(res, 200, reporteCitasPorMes(anio, query.incluirCanceladas === 'true', query.medicoId));
     }
     if (pathname === '/api/configuracion' && req.method === 'GET') return send(res, 200, config);
     if (pathname.startsWith('/api/configuracion/')) return send(res, 200, config.find((c) => c.medicoId === pathname.split('/').pop()));
