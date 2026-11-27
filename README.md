@@ -223,13 +223,16 @@ También se crean médicos de ejemplo con su configuración inicial para que la 
 
 ```bash
 # Frontend
-cd frontend && npm test
+cd frontend
+npm ci
+npm test -- --watch=false
+npm run build
 
 # Backend
-dotnet test
+dotnet test backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj --configuration Release
 ```
 
-Estado verificado del backend: la suite de pruebas automatizadas de xUnit está instalada y ejecuta correctamente una batería de pruebas de servicios clave.
+El backend incluye pruebas unitarias y pruebas de integración HTTP con `WebApplicationFactory`; estas últimas ejercitan rutas, autorización y serialización sin requerir Keycloak ni MongoDB. El workflow de GitHub Actions (`.github/workflows/ci.yml`) ejecuta las pruebas y compilaciones en cada pull request y push. Vercel y Railway pueden desplegar desde la rama principal una vez configurados sus proyectos y protegida la rama para exigir que CI pase.
 
 ---
 
