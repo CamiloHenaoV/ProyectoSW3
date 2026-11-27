@@ -46,6 +46,37 @@ var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? 
 var keycloakAuthority = builder.Configuration["Keycloak:Authority"];
 var keycloakAudience = builder.Configuration["Keycloak:Audience"];
 
+if (builder.Environment.IsProduction())
+{
+    var requiredSettings = new[]
+    {
+        "MongoDbSettings:ConnectionString",
+        "Keycloak:Authority",
+        "Keycloak:Audience",
+        "Keycloak:Realm",
+        "Keycloak:ServiceClientId",
+        "Keycloak:ServiceClientSecret"
+    };
+    var missingSettings = requiredSettings
+        .Where(key => string.IsNullOrWhiteSpace(builder.Configuration[key]))
+        .ToList();
+
+    if (builder.Configuration["MongoDbSettings:ConnectionString"] == "MONGO_ATLAS_CONNECTION_STRING")
+        missingSettings.Add("MongoDbSettings:ConnectionString");
+
+    if (missingSettings.Count > 0)
+    {
+        throw new InvalidOperationException(
+            $"Missing required production settings: {string.Join(", ", missingSettings.Distinct())}");
+    }
+
+    if (!Uri.TryCreate(keycloakAuthority, UriKind.Absolute, out var authorityUri) ||
+        authorityUri.Scheme != Uri.UriSchemeHttps)
+    {
+        throw new InvalidOperationException("Keycloak:Authority must be a public HTTPS URL in production.");
+    }
+}
+
 var authentication = builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
 
@@ -150,9 +181,28 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+    if (allowedOrigins.Length == 0)
+    {
+        if (builder.Environment.IsProduction())
+            throw new InvalidOperationException("Configure Cors:AllowedOrigins with the production frontend origin.");
+
+        allowedOrigins = ["http://localhost:4200"];
+    }
+
+    if (builder.Environment.IsProduction() &&
+        allowedOrigins.Any(origin =>
+            !Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            uri.GetLeftPart(UriPartial.Authority) != origin))
+    {
+        throw new InvalidOperationException(
+            "Production Cors:AllowedOrigins entries must be exact HTTPS origins without a trailing slash or path.");
+    }
+
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -203,6 +253,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
 app.MapControllers();
 app.Run();
 

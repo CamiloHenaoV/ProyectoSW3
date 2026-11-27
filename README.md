@@ -232,7 +232,11 @@ npm run build
 dotnet test backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj --configuration Release
 ```
 
-El backend incluye pruebas unitarias y pruebas de integración HTTP con `WebApplicationFactory`; estas últimas ejercitan rutas, autorización y serialización sin requerir Keycloak ni MongoDB. El workflow de GitHub Actions (`.github/workflows/ci.yml`) ejecuta las pruebas y compilaciones en cada pull request y push. Vercel y Railway pueden desplegar desde la rama principal una vez configurados sus proyectos y protegida la rama para exigir que CI pase.
+El backend incluye pruebas unitarias y pruebas de integración HTTP con `WebApplicationFactory`; estas últimas ejercitan rutas, autorización y serialización sin requerir Keycloak ni MongoDB. El workflow de GitHub Actions (`.github/workflows/ci.yml`) ejecuta las pruebas y compilaciones en cada pull request y push.
+
+### 6) Despliegue
+
+La configuración y las variables necesarias para Vercel, Render, MongoDB Atlas y Keycloak están en [docs/despliegue-vercel-render.md](docs/despliegue-vercel-render.md). No se deben guardar secretos de producción en el repositorio.
 
 ---
 

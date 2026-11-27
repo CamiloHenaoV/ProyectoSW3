@@ -29,6 +29,16 @@ public sealed class CitasApiIntegrationTests : IClassFixture<CitasApiFactory>
     }
 
     [Fact]
+    public async Task Health_EsPublicoYDevuelveOk()
+    {
+        using var client = _factory.CreateClient();
+
+        using var response = await client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ListarPorMedicoYFecha_RecorreApiAutorizacionYServicio()
     {
         using var client = _factory.CreateClient();

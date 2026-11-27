@@ -40,3 +40,5 @@ jobs:
         run: dotnet restore backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj
       - name: Run tests
         run: dotnet test backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj --no-restore --configuration Release
+      - name: Build Render container
+        run: docker build --tag piedrazul-api:ci backend/CitasMedicas.Api

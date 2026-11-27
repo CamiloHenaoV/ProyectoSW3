@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: piedrazul-api
+    runtime: docker
+    branch: main
+    rootDir: backend/CitasMedicas.Api
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: MongoDbSettings__ConnectionString
+        sync: false
+      - key: MongoDbSettings__DatabaseName
+        value: piedrazul_db
+      - key: Keycloak__Authority
+        sync: false
+      - key: Keycloak__Audience
+        value: piedrazul-api
+      - key: Keycloak__Realm
+        value: piedrazul
+      - key: Keycloak__ServiceClientId
+        value: piedrazul-api
+      - key: Keycloak__ServiceClientSecret
+        sync: false
+      - key: Cors__AllowedOrigins__0
+        sync: false
