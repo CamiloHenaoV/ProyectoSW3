@@ -115,7 +115,7 @@ public class CitasController : ControllerBase
 
     [HttpPut("{id}/cancelar")]
     [Authorize(Roles = $"{Roles.Paciente},{Roles.Agendador},{Roles.Administrador}")]
-    public async Task<IActionResult> Cancelar(string id)
+    public async Task<IActionResult> Cancelar(string id, [FromBody] CancelarCitaRequest? request = null)
     {
         var paciente = User.IsInRole(Roles.Paciente)
             ? await ResolverPacienteAutenticadoAsync()
@@ -127,7 +127,8 @@ public class CitasController : ControllerBase
         return await _citaService.CancelarAsync(
             id,
             paciente?.Id,
-            User.IsInRole(Roles.Paciente) ? ObtenerSubjectId() : null)
+            User.IsInRole(Roles.Paciente) ? ObtenerSubjectId() : null,
+            request?.Motivo)
             ? NoContent()
             : NotFound();
     }
