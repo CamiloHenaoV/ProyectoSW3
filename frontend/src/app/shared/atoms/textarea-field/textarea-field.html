@@ -1,0 +1,15 @@
+<textarea
+  class="app-textarea"
+  [name]="name()"
+  [placeholder]="placeholder()"
+  [value]="value()"
+  [rows]="rows()"
+  [required]="required()"
+  [disabled]="disabled()"
+  [attr.maxlength]="maxLength()"
+  [attr.aria-label]="ariaLabel() || null"
+  [attr.aria-describedby]="ariaDescribedBy() || null"
+  [attr.aria-invalid]="invalid() ? 'true' : null"
+  [class.app-textarea--invalid]="invalid()"
+  (input)="onInput($event)"
+></textarea>

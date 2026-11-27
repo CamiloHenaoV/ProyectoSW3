@@ -19,6 +19,52 @@
     (reagendarCita)="iniciarReagendamiento($event)"
   />
 
+  @if (citaCancelando(); as cita) {
+    <section class="panel cancelar-panel" aria-labelledby="titulo-cancelar">
+      <div>
+        <h3 id="titulo-cancelar">Cancelar cita con {{ cita.nombreMedico }}</h3>
+        <p>{{ descripcionCita(cita) }}. Al cancelar, el horario quedará libre para otro paciente.</p>
+        <p class="regla-plazo">Solo se puede cancelar con al menos 2 días de anticipación y es obligatorio escribir la justificación.</p>
+      </div>
+
+      <label class="campo-motivo">
+        Justificación de la cancelación
+        <app-textarea-field
+          name="motivoCancelacion"
+          placeholder="Cuéntanos brevemente por qué cancelas la cita"
+          ariaDescribedBy="ayuda-motivo"
+          [required]="true"
+          [maxLength]="longitudMaximaMotivo"
+          [invalid]="!!errorMotivo()"
+          [disabled]="cancelando()"
+          [value]="motivoCancelacion()"
+          (valueChange)="motivoCancelacion.set($event)"
+        />
+        
+      </label>
+      <div id="ayuda-motivo" class="ayuda-motivo">
+        @if (errorMotivo()) {
+          <span class="error-campo" role="alert">{{ errorMotivo() }}</span>
+        }
+        <span class="contador">{{ motivoCancelacion().length }}/{{ longitudMaximaMotivo }}</span>
+      </div>
+
+      @if (errorCancelacion()) {
+        <p class="aviso aviso--error" role="alert">{{ errorCancelacion() }}</p>
+      }
+
+      <div class="acciones-cancelar">
+        <app-button
+          label="Confirmar cancelación"
+          variant="danger"
+          [disabled]="cancelando()"
+          (clicked)="confirmarCancelacion()"
+        />
+        <app-button label="Volver" variant="secondary" [disabled]="cancelando()" (clicked)="cerrarCancelacion()" />
+      </div>
+    </section>
+  }
+
   @if (citaReagendando(); as cita) {
     <section class="panel reagendar-panel">
       <div>

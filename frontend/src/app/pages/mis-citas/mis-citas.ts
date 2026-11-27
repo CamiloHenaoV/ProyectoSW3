@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CitasService } from '../../core/services/citas.service';
-import { hoyLocal, sumarDias } from '../../core/utils/fechas';
+import { fechaLarga, formatearHora, hoyLocal, sumarDias } from '../../core/utils/fechas';
+import { LONGITUD_MAXIMA_MOTIVO, MENSAJE_PLAZO_CANCELACION, mensajeErrorMotivo, puedeCancelarCita, validarMotivo} from '../../core/utils/cancelacion';
 import { mensajeDeError } from '../../core/utils/http-errores';
 import { ordenarRecientesPrimero } from '../../core/utils/filtros-citas';
 import { CitaListado, FranjaDisponible } from '../../core/models/cita.model';
@@ -8,13 +9,15 @@ import { TablaCitas } from '../../shared/organisms/tabla-citas/tabla-citas';
 import { SelectorFranjas } from '../../shared/organisms/selector-franjas/selector-franjas';
 import { InputField } from '../../shared/atoms/input-field/input-field';
 import { Button } from '../../shared/atoms/button/button';
+import { TextareaField } from '../../shared/atoms/textarea-field/textarea-field';
 
 @Component({
   selector: 'app-mis-citas',
-  imports: [TablaCitas, SelectorFranjas, InputField, Button],
+  imports: [TablaCitas, SelectorFranjas, InputField, TextareaField, Button],
   templateUrl: './mis-citas.html',
   styleUrl: './mis-citas.scss'
 })
+
 export class MisCitasPage {
   private citasService = inject(CitasService);
 
@@ -28,24 +31,80 @@ export class MisCitasPage {
   franjaSeleccionada = signal<FranjaDisponible | null>(null);
   cargandoFranjas = signal(false);
 
+  // Cancelación de citas
+  readonly longitudMaximaMotivo = LONGITUD_MAXIMA_MOTIVO;
+  citaCancelando = signal<CitaListado | null>(null);
+  motivoCancelacion = signal('');
+  motivoTocado = signal(false);
+  cancelando = signal(false);
+  errorCancelacion = signal('');
+  errorMotivo = computed(() => (this.motivoTocado() ? mensajeErrorMotivo(validarMotivo(this.motivoCancelacion())) : ''));
+
   ngOnInit(): void {
     this.cargarCitas();
   }
 
   cancelar(citaId: string): void {
-    if (!window.confirm('¿Confirmas que deseas cancelar esta cita?')) {
+    const cita = this.citas().find((item) => item.id === citaId);
+    if (!cita) {
+      this.avisar('No se encontró la cita que deseas cancelar.', 'error');
+      return;
+    }
+    if (!puedeCancelarCita(cita)) {
+      this.avisar(MENSAJE_PLAZO_CANCELACION, 'error');
       return;
     }
 
-    this.citasService.cancelar(citaId).subscribe({
+    this.citaReagendando.set(null);
+    this.motivoCancelacion.set('');
+    this.motivoTocado.set(false);
+    this.errorCancelacion.set('');
+    this.mensaje.set('');
+    this.citaCancelando.set(cita);
+  }
+
+  confirmarCancelacion(): void {
+    const cita = this.citaCancelando();
+    if (!cita || this.cancelando()) {
+      return;
+    }
+
+    this.motivoTocado.set(true);
+    if (validarMotivo(this.motivoCancelacion())) {
+      return;
+    }
+    if (!puedeCancelarCita(cita)) {
+      this.errorCancelacion.set(MENSAJE_PLAZO_CANCELACION);
+      return;
+    }
+
+    this.cancelando.set(true);
+    this.errorCancelacion.set('');
+    this.citasService.cancelar(cita.id, this.motivoCancelacion()).subscribe({
       next: () => {
-        this.avisar('La cita se canceló.', 'exito');
+        this.cancelando.set(false);
+        this.cerrarCancelacion();
+        this.avisar('La cita se canceló. El horario quedó libre para otro paciente.', 'exito');
         this.cargarCitas(false);
       },
-      error: (err) => this.avisar(mensajeDeError(err, 'No fue posible cancelar la cita.'), 'error')
+      error: (err) => {
+        this.cancelando.set(false);
+        this.errorCancelacion.set(mensajeDeError(err, 'No fue posible cancelar la cita.'));
+      }
     });
   }
 
+  cerrarCancelacion(): void {
+    this.citaCancelando.set(null);
+    this.motivoCancelacion.set('');
+    this.motivoTocado.set(false);
+    this.errorCancelacion.set('');
+  }
+
+  descripcionCita(cita: CitaListado): string {
+    return `${fechaLarga(cita.fecha)} a las ${formatearHora(cita.horaInicio)}`;
+  }
+  
   iniciarReagendamiento(citaId: string): void {
     const cita = this.citas().find((item) => item.id === citaId);
     if (!cita) {
@@ -53,6 +112,7 @@ export class MisCitasPage {
       return;
     }
 
+    this.cerrarCancelacion();
     this.citaReagendando.set(cita);
     this.fechaReagendar.set(this.fechaManana());
     this.franjas.set([]);

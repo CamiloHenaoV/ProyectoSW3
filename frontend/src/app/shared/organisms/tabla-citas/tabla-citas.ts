@@ -4,6 +4,7 @@ import { BadgeEstado } from '../../atoms/badge-estado/badge-estado';
 import { Button } from '../../atoms/button/button';
 import { HoraPipe } from '../../pipes/hora.pipe';
 import { CitaListado } from '../../../core/models/cita.model';
+import { puedeCancelarCita } from '../../../core/utils/cancelacion';
 
 /**
  * - agenda:    citas de un profesional en un día (RF1/RF4): orden, hora, paciente, cédula.
@@ -31,5 +32,10 @@ export class TablaCitas {
   eliminarCita = output<string>();
 
   esAgenda = computed(() => this.modo() === 'agenda');
+  esPaciente = computed(() => this.modo() === 'paciente');
   hayAcciones = computed(() => this.mostrarCancelar() || this.mostrarReagendar() || this.mostrarEliminar());
+
+  cancelacionBloqueada(cita: CitaListado): boolean {
+    return this.esPaciente() && !puedeCancelarCita(cita);
+  }
 }
