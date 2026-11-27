@@ -4,6 +4,8 @@ public record AgendarCitaRequest(string MedicoId, DateTime Fecha, TimeSpan HoraI
 
 public record ReagendarCitaRequest(DateTime Fecha, TimeSpan HoraInicio);
 
+public record CancelarCitaRequest(string? Motivo = null);
+
 public record CitaListadoDto(
     string Id,
     string MedicoId,
@@ -14,6 +16,7 @@ public record CitaListadoDto(
     string Estado,
     string? PacienteId,
     string? PacienteNombre = null,
-    string? PacienteDocumento = null);
+    string? PacienteDocumento = null,
+    string? MotivoCancelacion = null);
 
 public record FranjaDisponibleDto(DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin);

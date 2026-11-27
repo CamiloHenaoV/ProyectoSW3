@@ -7,6 +7,7 @@ using CitasMedicas.Api.Modules.Scheduling.Application.Interfaces;
 using CitasMedicas.Api.Modules.Scheduling.Application.Strategies;
 using CitasMedicas.Api.Modules.Scheduling.Domain;
 using CitasMedicas.Api.Modules.Scheduling.Infrastructure;
+using CitasMedicas.Api.Modules.Scheduling.Application.Policies;
 
 namespace CitasMedicas.Api.Modules.Scheduling.Application.Services;
 
@@ -17,6 +18,7 @@ public class CitaService : ICitaService
     private readonly IPacienteRepository? _pacienteRepository;
     private readonly IConfiguracionService _configuracionService;
     private readonly IGeneradorFranjasStrategy _generadorFranjas;
+    private readonly TimeProvider _reloj;
 
     public CitaService(
         ICitaRepository citaRepository,
@@ -32,14 +34,17 @@ public class CitaService : ICitaService
         IMedicoRepository medicoRepository,
         IPacienteRepository? pacienteRepository,
         IConfiguracionService configuracionService,
-        IGeneradorFranjasStrategy generadorFranjas)
+        IGeneradorFranjasStrategy generadorFranjas,
+        TimeProvider? reloj = null)
     {
+        _reloj = reloj ?? TimeProvider.System;
         _citaRepository = citaRepository;
         _medicoRepository = medicoRepository;
         _pacienteRepository = pacienteRepository;
         _configuracionService = configuracionService;
         _generadorFranjas = generadorFranjas;
     }
+
 
     public async Task<List<CitaListadoDto>> ListarPorMedicoYFechaAsync(string medicoId, DateTime fecha)
     {
@@ -86,7 +91,8 @@ public class CitaService : ICitaService
                     : null,
                 c.PacienteId is not null && documentosPorId.TryGetValue(c.PacienteId, out var pacienteDocumento)
                     ? pacienteDocumento
-                    : null))
+                    : null,
+                c.MotivoCancelacion))
             .ToList();
     }
 
@@ -123,7 +129,8 @@ public class CitaService : ICitaService
                 c.HoraFin,
                 c.Estado.ToString(),
                 c.PacienteId,
-                null))
+                null,
+                MotivoCancelacion: c.MotivoCancelacion))
             .ToList();
     }
 
@@ -165,11 +172,12 @@ public class CitaService : ICitaService
                 c.Estado.ToString(),
                 paciente.Id,
                 paciente.Nombre,
-                paciente.DocumentoIdentidad))
+                paciente.DocumentoIdentidad,
+                c.MotivoCancelacion))
             .ToList();
     }
 
-    public async Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha)
+        public async Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha)
     {
         if (string.IsNullOrWhiteSpace(medicoId))
             return new List<FranjaDisponibleDto>();
@@ -253,10 +261,11 @@ public class CitaService : ICitaService
             _pacienteRepository is not null ? (await _pacienteRepository.GetByIdAsync(pacienteId))?.Nombre : null);
     }
 
-    public async Task<bool> CancelarAsync(
+public async Task<bool> CancelarAsync(
         string citaId,
         string? pacienteId,
-        string? identidadExternaId = null)
+        string? identidadExternaId = null,
+        string? motivo = null)
     {
         var cita = await _citaRepository.GetByIdAsync(citaId);
         if (cita is null)
@@ -270,7 +279,23 @@ public class CitaService : ICitaService
         if (cita.Estado is EstadoCita.Cancelada or EstadoCita.Atendida)
             throw new InvalidOperationException("No se puede cancelar una cita cancelada o atendida.");
 
+        var motivoLimpio = string.IsNullOrWhiteSpace(motivo) ? null : motivo.Trim();
+
+        if (motivoLimpio is { Length: > PoliticaCancelacion.LongitudMaximaMotivo })
+            throw new InvalidOperationException(PoliticaCancelacion.MensajeMotivoMuyLargo);
+
+        if (pacienteId is not null)
+        {
+            if (motivoLimpio is null)
+                throw new InvalidOperationException(PoliticaCancelacion.MensajeMotivoRequerido);
+
+            if (!PoliticaCancelacion.CumpleAnticipacion(cita.Fecha, cita.HoraInicio, _reloj.GetUtcNow()))
+                throw new InvalidOperationException(PoliticaCancelacion.MensajeAnticipacion);
+        }
+
         cita.Estado = EstadoCita.Cancelada;
+        cita.MotivoCancelacion = motivoLimpio;
+        cita.FechaCancelacion = _reloj.GetUtcNow().UtcDateTime;
         return await _citaRepository.UpdateAsync(cita.Id, cita);
     }
 

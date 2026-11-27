@@ -19,6 +19,7 @@ export interface CitaListado {
   pacienteNombre?: string | null;
   pacienteDocumento?: string | null;
   especialidadMedico?: string | null;
+  motivoCancelacion?: string | null;
 }
 
 export interface FranjaDisponible {
@@ -37,4 +38,9 @@ export interface AgendarCitaRequest {
 export interface ReagendarCitaRequest {
   fecha: string;
   horaInicio: string;
+}
+
+/**Justificación obligatoria cuando cancela el paciente y opcional cuando cancela el personal*/
+export interface CancelarCitaRequest {
+  motivo?: string;
 }

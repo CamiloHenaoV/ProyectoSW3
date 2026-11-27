@@ -34,4 +34,12 @@ public class Cita
 
     [BsonElement("FechaCreacion")]
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("MotivoCancelacion")]
+    [BsonIgnoreIfNull]
+    public string? MotivoCancelacion { get; set; }
+
+    [BsonElement("FechaCancelacion")]
+    [BsonIgnoreIfNull]
+    public DateTime? FechaCancelacion { get; set; }
 }

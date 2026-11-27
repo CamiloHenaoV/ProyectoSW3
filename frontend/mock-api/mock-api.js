@@ -111,6 +111,26 @@ http.createServer((req, res) => {
       if (!tiene('Agendador', 'Administrador', 'Medico', 'Terapista')) return send(res, 403, { detail: 'Prohibido' });
       return send(res, 200, citas.filter((c) => c.medicoId === query.medicoId && c.fecha.startsWith(query.fecha)));
     }
+    const cancelar = pathname.match(/^\/api\/citas\/([^/]+)\/cancelar$/);
+    if (cancelar && req.method === 'PUT') {
+      if (!tiene('Paciente', 'Agendador', 'Administrador')) return send(res, 403, { detail: 'Prohibido' });
+      const c = citas.find((x) => x.id === cancelar[1]);
+      if (!c) return send(res, 404);
+      if (c.estado === 'Cancelada' || c.estado === 'Atendida') return send(res, 409, { detail: 'No se puede cancelar una cita cancelada o atendida.' });
+      const motivo = String((body ? JSON.parse(body) : {}).motivo || '').trim();
+      //solo el paciente tiene justificación obligatoria y plazo de 48 h
+      if (tiene('Paciente')) {
+        if (c.pacienteDocumento !== p.documento) return send(res, 403, { detail: 'Solo puedes cancelar tus propias citas.' });
+        if (!motivo) return send(res, 409, { detail: 'Debes indicar la justificación de la cancelación.' });
+        if (motivo.length > 500) return send(res, 409, { detail: 'La justificación no puede superar 500 caracteres.' });
+        const [y, m, d] = c.fecha.substring(0, 10).split('-').map(Number);
+        const [h, mi] = c.horaInicio.split(':').map(Number);
+        const horas = (Date.UTC(y, m - 1, d, h, mi) - (Date.now() - 5 * 3600 * 1000)) / 3600000; // hora de Colombia
+        if (horas < 48) return send(res, 409, { detail: 'Solo puedes cancelar una cita con al menos 2 días (48 horas) de anticipación.' });
+      }
+      c.estado = 'Cancelada'; c.motivoCancelacion = motivo || null;
+      return send(res, 204);
+    }
     if (pathname === '/api/citas/franjas-disponibles') return send(res, 200, franjas(query.medicoId, query.fecha));
     if (pathname === '/api/citas/mis-citas') return send(res, 200, citas.filter((c) => c.pacienteDocumento === p.documento));
     if (pathname === '/api/citas/agendar') {

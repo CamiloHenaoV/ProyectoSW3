@@ -9,7 +9,11 @@ public interface ICitaService
     Task<List<CitaListadoDto>?> ListarPorDocumentoAsync(string documento);
     Task<List<FranjaDisponibleDto>> ObtenerFranjasDisponiblesAsync(string medicoId, DateTime fecha);
     Task<CitaListadoDto> AgendarAsync(string pacienteId, AgendarCitaRequest request);
-    Task<bool> CancelarAsync(string citaId, string? pacienteId, string? identidadExternaId = null);
+    Task<bool> CancelarAsync(
+        string citaId,
+        string? pacienteId,
+        string? identidadExternaId = null,
+        string? motivo = null);
     Task<bool> EliminarAsync(string citaId);
     Task<CitaListadoDto?> ReagendarAsync(
         string citaId,

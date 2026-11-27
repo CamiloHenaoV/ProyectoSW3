@@ -70,6 +70,22 @@
   text-decoration: line-through;
 }
 
+.motivo {
+  display: block;
+  margin-top: 0.35rem;
+  max-width: 22rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.nota-plazo {
+  margin: 0.4rem 0 0;
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
 .acciones {
   display: flex;
   justify-content: flex-end;

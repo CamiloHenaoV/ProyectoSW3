@@ -1,9 +1,12 @@
 .reagendar-panel h3,
-.reagendar-panel p {
+.reagendar-panel p,
+.cancelar-panel h3,
+.cancelar-panel p {
   margin: 0;
 }
 
-.reagendar-panel p {
+.reagendar-panel p,
+.cancelar-panel p {
   margin-top: 0.35rem;
   color: var(--ink-soft);
 }
@@ -21,6 +24,39 @@
 }
 
 .acciones-reagendar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cancelar-panel .regla-plazo {
+  font-size: 0.85rem;
+}
+
+.campo-motivo {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ayuda-motivo {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: -0.5rem;
+  font-size: 0.8rem;
+}
+
+.error-campo {
+  color: var(--error);
+}
+
+.contador {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.acciones-cancelar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;

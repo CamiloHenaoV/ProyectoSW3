@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AgendarCitaRequest, CitaListado, FranjaDisponible, ReagendarCitaRequest } from '../models/cita.model';
+import {AgendarCitaRequest,CancelarCitaRequest,CitaListado,FranjaDisponible,ReagendarCitaRequest} from '../models/cita.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -34,8 +34,10 @@ export class CitasService {
     return this.http.post<CitaListado>(`${this.baseUrl}/agendar`, request);
   }
 
-  cancelar(id: string): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/${id}/cancelar`, {});
+  cancelar(id: string, motivo?: string): Observable<void> {
+    const limpio = motivo?.trim();
+    const cuerpo: CancelarCitaRequest = limpio ? { motivo: limpio } : {};
+    return this.http.put<void>(`${this.baseUrl}/${id}/cancelar`, cuerpo);
   }
 
   reagendar(id: string, request: ReagendarCitaRequest): Observable<CitaListado> {

@@ -41,7 +41,12 @@
                 }
               </td>
             }
-            <td><app-badge-estado [estado]="cita.estado" /></td>
+            <td>
+              <app-badge-estado [estado]="cita.estado" />
+              @if (cita.estado === 'Cancelada' && cita.motivoCancelacion) {
+                <span class="motivo"><strong>Motivo:</strong> {{ cita.motivoCancelacion }}</span>
+              }
+            </td>
             @if (hayAcciones()) {
               <td>
                 <div class="acciones">
@@ -49,12 +54,20 @@
                     <app-button label="Reagendar" variant="secondary" (clicked)="reagendarCita.emit(cita.id)" />
                   }
                   @if (mostrarCancelar() && cita.estado !== 'Cancelada' && cita.estado !== 'Atendida') {
-                    <app-button label="Cancelar" variant="danger" (clicked)="cancelarCita.emit(cita.id)" />
+                    <app-button
+                      label="Cancelar"
+                      variant="danger"
+                      [disabled]="cancelacionBloqueada(cita)"
+                      (clicked)="cancelarCita.emit(cita.id)"
+                    />
                   }
                   @if (mostrarEliminar()) {
                     <app-button label="Eliminar" variant="danger" (clicked)="eliminarCita.emit(cita.id)" />
                   }
                 </div>
+                @if (mostrarCancelar() && cita.estado === 'Agendada' && cancelacionBloqueada(cita)) {
+                  <p class="nota-plazo">Solo se puede cancelar con 2 días de anticipación.</p>
+                }
               </td>
             }
           </tr>
