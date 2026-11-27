@@ -343,7 +343,7 @@ public class CitaServiceTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
 
-        Assert.Contains("48 horas", ex.Message);
+        Assert.Contains("2 días", ex.Message);
         Assert.Equal(EstadoCita.Agendada, cita.Estado);
         Assert.Null(cita.MotivoCancelacion);
         Assert.Null(cita.FechaCancelacion);
