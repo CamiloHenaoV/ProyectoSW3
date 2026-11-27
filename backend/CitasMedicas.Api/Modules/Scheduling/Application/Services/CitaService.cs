@@ -283,8 +283,6 @@ public async Task<bool> CancelarAsync(
         if (motivoLimpio is { Length: > PoliticaCancelacion.LongitudMaximaMotivo })
             throw new InvalidOperationException(PoliticaCancelacion.MensajeMotivoMuyLargo);
 
-        // Las reglas de RF6 aplican al paciente; el personal (agendador/administrador) puede
-        // cancelar sin plazo ni justificación obligatoria para resolver imprevistos de la agenda.
         if (pacienteId is not null)
         {
             if (motivoLimpio is null)

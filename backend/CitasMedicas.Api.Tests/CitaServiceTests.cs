@@ -292,18 +292,134 @@ public class CitaServiceTests
         Assert.Equal("Dra. Gómez", citas[0].NombreMedico);
     }
 
-    [Fact]
-    public async Task CancelarAsync_CambiaEstadoDeLaCitaPropia()
-    {
-        var cita = new Cita
+    private static readonly DateTimeOffset AhoraFijo = new(2026, 3, 10, 15, 0, 0, TimeSpan.Zero);
+    private const string MotivoValido = "Tengo un viaje y no puedo asistir";
+
+    private static Cita CitaAgendada(DateTime inicioLocal, string pacienteId = "paciente-1", EstadoCita estado = EstadoCita.Agendada)
+        => new()
         {
             Id = "cita-1",
-            Estado = EstadoCita.Agendada,
-            PacienteId = "paciente-1"
+            Estado = estado,
+            PacienteId = pacienteId,
+            Fecha = DateTime.SpecifyKind(inicioLocal.Date, DateTimeKind.Utc),
+            HoraInicio = inicioLocal.TimeOfDay
         };
-        var service = CrearServicio(new FakeCitaRepository(cita));
 
-        var resultado = await service.CancelarAsync(cita.Id, "paciente-1");
+    private static CitaService ServicioConReloj(Cita cita)
+        => CrearServicio(new FakeCitaRepository(cita), new RelojFijo(AhoraFijo));
+
+    [Fact]
+    public async Task CancelarAsync_PacienteConMotivoYAnticipacion_CancelaYGuardaMotivo()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 15, 10, 0, 0));
+        var service = ServicioConReloj(cita);
+
+        var resultado = await service.CancelarAsync(cita.Id, "paciente-1", null, "  " + MotivoValido + "  ");
+
+        Assert.True(resultado);
+        Assert.Equal(EstadoCita.Cancelada, cita.Estado);
+        Assert.Equal(MotivoValido, cita.MotivoCancelacion);
+        Assert.Equal(AhoraFijo.UtcDateTime, cita.FechaCancelacion);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_PacienteExactamenteA48Horas_EsPermitido()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 12, 10, 0, 0));
+        var service = ServicioConReloj(cita);
+
+        var resultado = await service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido);
+
+        Assert.True(resultado);
+        Assert.Equal(EstadoCita.Cancelada, cita.Estado);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_PacienteUnMinutoAntesDelLimite_EsRechazado()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 12, 9, 59, 0));
+        var service = ServicioConReloj(cita);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+
+        Assert.Contains("48 horas", ex.Message);
+        Assert.Equal(EstadoCita.Agendada, cita.Estado);
+        Assert.Null(cita.MotivoCancelacion);
+        Assert.Null(cita.FechaCancelacion);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_PacienteUnMinutoDespuesDelLimite_EsPermitido()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 12, 10, 1, 0));
+        var service = ServicioConReloj(cita);
+
+        Assert.True(await service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+    }
+
+    [Theory]
+    [InlineData(2026, 3, 11, 10, 0)]
+    [InlineData(2026, 3, 10, 16, 0)]
+    [InlineData(2026, 3, 9, 10, 0)]
+    public async Task CancelarAsync_PacienteConMenosDeDosDias_EsRechazado(int anio, int mes, int dia, int hora, int minuto)
+    {
+        var cita = CitaAgendada(new DateTime(anio, mes, dia, hora, minuto, 0));
+        var service = ServicioConReloj(cita);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+
+        Assert.Contains("2 días", ex.Message);
+        Assert.Equal(EstadoCita.Agendada, cita.Estado);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_CalculaElPlazoEnHoraDeColombiaYNoEnUtc()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 12, 12, 0, 0));
+        var service = ServicioConReloj(cita);
+
+        Assert.True(await service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("    ")]
+    public async Task CancelarAsync_PacienteSinMotivo_EsRechazado(string? motivo)
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0));
+        var service = ServicioConReloj(cita);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CancelarAsync(cita.Id, "paciente-1", null, motivo));
+
+        Assert.Contains("justificación", ex.Message);
+        Assert.Equal(EstadoCita.Agendada, cita.Estado);
+        Assert.Null(cita.MotivoCancelacion);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_MotivoDe500CaracteresEsValidoYDe501EsRechazado()
+    {
+        var citaValida = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0));
+        Assert.True(await ServicioConReloj(citaValida)
+            .CancelarAsync(citaValida.Id, "paciente-1", null, new string('a', 500)));
+
+        var citaLarga = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            ServicioConReloj(citaLarga).CancelarAsync(citaLarga.Id, "paciente-1", null, new string('a', 501)));
+        Assert.Equal(EstadoCita.Agendada, citaLarga.Estado);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_PacienteIdentificadoPorSubjectDeKeycloak_PuedeCancelarSuCita()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0), pacienteId: "sub-keycloak-1");
+        var service = ServicioConReloj(cita);
+
+        var resultado = await service.CancelarAsync(cita.Id, "paciente-1", "sub-keycloak-1", MotivoValido);
 
         Assert.True(resultado);
         Assert.Equal(EstadoCita.Cancelada, cita.Estado);
@@ -312,23 +428,45 @@ public class CitaServiceTests
     [Fact]
     public async Task CancelarAsync_RechazaCitaDeOtroPaciente()
     {
-        var cita = new Cita { Id = "cita-1", Estado = EstadoCita.Agendada, PacienteId = "paciente-2" };
-        var service = CrearServicio(new FakeCitaRepository(cita));
+        var cita = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0), pacienteId: "paciente-2");
+        var service = ServicioConReloj(cita);
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            service.CancelarAsync(cita.Id, "paciente-1"));
+            service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+        Assert.Equal(EstadoCita.Agendada, cita.Estado);
     }
 
     [Fact]
-    public async Task CancelarAsync_PersonalPuedeCancelarCitaDeOtroPaciente()
+    public async Task CancelarAsync_PersonalPuedeCancelarSinMotivoNiPlazo()
     {
-        var cita = new Cita { Id = "cita-1", Estado = EstadoCita.Agendada, PacienteId = "paciente-2" };
-        var service = CrearServicio(new FakeCitaRepository(cita));
+        var cita = CitaAgendada(new DateTime(2026, 3, 10, 11, 0, 0), pacienteId: "paciente-2");
+        var service = ServicioConReloj(cita);
 
         var resultado = await service.CancelarAsync(cita.Id, null);
 
         Assert.True(resultado);
         Assert.Equal(EstadoCita.Cancelada, cita.Estado);
+        Assert.Null(cita.MotivoCancelacion);
+        Assert.Equal(AhoraFijo.UtcDateTime, cita.FechaCancelacion);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_PersonalConservaElMotivoSiLoIndica()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 10, 11, 0, 0), pacienteId: "paciente-2");
+        var service = ServicioConReloj(cita);
+
+        await service.CancelarAsync(cita.Id, null, null, "Médico en incapacidad");
+
+        Assert.Equal("Médico en incapacidad", cita.MotivoCancelacion);
+    }
+
+    [Fact]
+    public async Task CancelarAsync_DevuelveFalsoSiLaCitaNoExiste()
+    {
+        var service = CrearServicio(new FakeCitaRepository(), new RelojFijo(AhoraFijo));
+
+        Assert.False(await service.CancelarAsync("no-existe", "paciente-1", null, MotivoValido));
     }
 
     [Theory]
@@ -336,11 +474,23 @@ public class CitaServiceTests
     [InlineData(EstadoCita.Atendida)]
     public async Task CancelarAsync_RechazaCitasYaCanceladasOAtendidas(EstadoCita estado)
     {
-        var cita = new Cita { Id = "cita-1", Estado = estado, PacienteId = "paciente-1" };
-        var service = CrearServicio(new FakeCitaRepository(cita));
+        var cita = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0), estado: estado);
+        var service = ServicioConReloj(cita);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CancelarAsync(cita.Id, "paciente-1"));
+            service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido));
+    }
+
+    [Fact]
+    public async Task ListarPorPaciente_IncluyeElMotivoDeCancelacion()
+    {
+        var cita = CitaAgendada(new DateTime(2026, 3, 20, 10, 0, 0));
+        var service = ServicioConReloj(cita);
+        await service.CancelarAsync(cita.Id, "paciente-1", null, MotivoValido);
+
+        var citas = await service.ListarPorPacienteAsync("paciente-1");
+
+        Assert.Equal(MotivoValido, Assert.Single(citas).MotivoCancelacion);
     }
 
     [Fact]
@@ -475,14 +625,21 @@ public class CitaServiceTests
         Assert.True(resultado);
     }
 
-    private static CitaService CrearServicio(FakeCitaRepository citaRepository)
+    private static CitaService CrearServicio(FakeCitaRepository citaRepository, TimeProvider? reloj = null)
         => new(
             citaRepository,
             new FakeMedicoRepository(),
+            null,
             new FakeConfiguracionService(new ConfiguracionMedicoDto(
                 "cfg-1", "medico-1", new List<DayOfWeek> { DayOfWeek.Monday },
                 new TimeSpan(9, 0, 0), new TimeSpan(10, 0, 0), 60, 2)),
-            new FranjasFijasStrategy());
+            new FranjasFijasStrategy(),
+            reloj);
+
+    private sealed class RelojFijo(DateTimeOffset ahora) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => ahora;
+    }
 
     private sealed class FakeCitaRepository : ICitaRepository
     {

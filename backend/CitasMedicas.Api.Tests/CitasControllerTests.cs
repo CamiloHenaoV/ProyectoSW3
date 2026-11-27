@@ -45,9 +45,76 @@ public class CitasControllerTests
         Assert.True(servicio.ListadoInvocado);
     }
 
-    private static CitasController CrearController(ICitaService servicio, ClaimsPrincipal usuario)
+    [Fact]
+    public async Task Cancelar_Paciente_EnviaElMotivoAlServicio()
     {
-        var controller = new CitasController(servicio, new FakePacienteService())
+        var servicio = new FakeCitaService { CancelarResultado = true };
+        var controller = CrearController(servicio, UsuarioPaciente(), new FakePacienteService(PacienteConocido));
+
+        var resultado = await controller.Cancelar("cita-1", new CancelarCitaRequest("No puedo asistir"));
+
+        Assert.IsType<NoContentResult>(resultado);
+        Assert.Equal("cita-1", servicio.CitaCancelada);
+        Assert.Equal("paciente-1", servicio.PacienteQueCancela);
+        Assert.Equal("sub-1", servicio.IdentidadExternaRecibida);
+        Assert.Equal("No puedo asistir", servicio.MotivoRecibido);
+    }
+
+    [Fact]
+    public async Task Cancelar_Paciente_SinCuerpoLlegaAlServicioSinMotivo()
+    {
+        var servicio = new FakeCitaService { CancelarResultado = true };
+        var controller = CrearController(servicio, UsuarioPaciente(), new FakePacienteService(PacienteConocido));
+
+        await controller.Cancelar("cita-1", null);
+
+        Assert.Null(servicio.MotivoRecibido);
+    }
+
+    [Fact]
+    public async Task Cancelar_Personal_NoNecesitaCuerpoNiIdentidadDePaciente()
+    {
+        var servicio = new FakeCitaService { CancelarResultado = true };
+        var controller = CrearController(servicio, new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.Role, Roles.Agendador)
+        ], "test")));
+
+        var resultado = await controller.Cancelar("cita-1");
+
+        Assert.IsType<NoContentResult>(resultado);
+        Assert.Null(servicio.PacienteQueCancela);
+        Assert.Null(servicio.IdentidadExternaRecibida);
+        Assert.Null(servicio.MotivoRecibido);
+    }
+
+    [Fact]
+    public async Task Cancelar_CitaInexistente_Devuelve404()
+    {
+        var servicio = new FakeCitaService { CancelarResultado = false };
+        var controller = CrearController(servicio, UsuarioPaciente(), new FakePacienteService(PacienteConocido));
+
+        var resultado = await controller.Cancelar("no-existe", new CancelarCitaRequest("Motivo"));
+
+        Assert.IsType<NotFoundResult>(resultado);
+    }
+
+    private static readonly PacienteDto PacienteConocido = new("paciente-1", "Paciente Uno", "123", "300", "p@example.com");
+
+    private static ClaimsPrincipal UsuarioPaciente()
+        => new(new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.Role, Roles.Paciente),
+            new Claim("sub", "sub-1"),
+            new Claim("documento", "123")
+        ], "test"));
+
+    private static CitasController CrearController(
+        ICitaService servicio,
+        ClaimsPrincipal usuario,
+        IPacienteService? pacientes = null)
+    {
+        var controller = new CitasController(servicio, pacientes ?? new FakePacienteService())
         {
             ControllerContext = new ControllerContext
             {
@@ -60,6 +127,11 @@ public class CitasControllerTests
     private sealed class FakeCitaService : ICitaService
     {
         public bool ListadoInvocado { get; private set; }
+        public bool CancelarResultado { get; set; }
+        public string? CitaCancelada { get; private set; }
+        public string? PacienteQueCancela { get; private set; }
+        public string? IdentidadExternaRecibida { get; private set; }
+        public string? MotivoRecibido { get; private set; }
 
         public Task<List<CitaListadoDto>> ListarPorMedicoYFechaAsync(string medicoId, DateTime fecha)
         {
@@ -87,8 +159,18 @@ public class CitasControllerTests
                 "Agendada",
                 pacienteId));
 
-        public Task<bool> CancelarAsync(string citaId, string? pacienteId, string? identidadExternaId = null)
-            => Task.FromResult(false);
+        public Task<bool> CancelarAsync(
+            string citaId,
+            string? pacienteId,
+            string? identidadExternaId = null,
+            string? motivo = null)
+        {
+            CitaCancelada = citaId;
+            PacienteQueCancela = pacienteId;
+            IdentidadExternaRecibida = identidadExternaId;
+            MotivoRecibido = motivo;
+            return Task.FromResult(CancelarResultado);
+        }
 
         public Task<bool> EliminarAsync(string citaId)
             => Task.FromResult(false);
@@ -101,7 +183,7 @@ public class CitasControllerTests
             => Task.FromResult<CitaListadoDto?>(null);
     }
 
-    private sealed class FakePacienteService : IPacienteService
+    private sealed class FakePacienteService(PacienteDto? pacienteResuelto = null) : IPacienteService
     {
         public Task<PacienteDto> RegistrarAsync(RegistroPacienteRequest request)
             => Task.FromResult(new PacienteDto("", "", "", "", ""));
@@ -110,7 +192,7 @@ public class CitasControllerTests
             => Task.FromResult<PacienteDto?>(null);
 
         public Task<PacienteDto?> ResolverIdentidadKeycloakAsync(string documento, string subjectId)
-            => Task.FromResult<PacienteDto?>(null);
+            => Task.FromResult(pacienteResuelto);
 
         public Task<List<PacienteResumenDto>> BuscarPorDocumentoAsync(string prefijo, int limite)
             => Task.FromResult(new List<PacienteResumenDto>());
