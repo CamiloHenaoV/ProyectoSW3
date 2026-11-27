@@ -7,6 +7,7 @@ using CitasMedicas.Api.Modules.Scheduling.Application.Interfaces;
 using CitasMedicas.Api.Modules.Scheduling.Application.Strategies;
 using CitasMedicas.Api.Modules.Scheduling.Domain;
 using CitasMedicas.Api.Modules.Scheduling.Infrastructure;
+using CitasMedicas.Api.Modules.Scheduling.Application.Policies;
 
 namespace CitasMedicas.Api.Modules.Scheduling.Application.Services;
 
