@@ -5,7 +5,7 @@ services:
     rootDir: keycloak
     dockerfilePath: Dockerfile
     region: oregon
-    plan: 0.5c-512mb
+    plan: free
     healthCheckPath: /realms/master/.well-known/openid-configuration
     envVars:
       - key: KC_DB
@@ -27,6 +27,7 @@ services:
   - type: web
     name: piedrazul-api
     runtime: docker
+    plan: free
     branch: main
     rootDir: backend/CitasMedicas.Api
     dockerfilePath: Dockerfile
@@ -57,5 +58,5 @@ databases:
     user: keycloak
     postgresMajorVersion: "16"
     region: oregon
-    plan: 0.1c-256mb
+    plan: free
     ipAllowList: []

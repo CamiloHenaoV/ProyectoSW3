@@ -5,7 +5,7 @@ El frontend Angular se despliega en Vercel. El Blueprint [`render.yaml`](../rend
 ## 1. Preparar servicios externos
 
 - Crea una base y un usuario de MongoDB Atlas con permisos mínimos para la base de la aplicación. Configura el acceso de red para que Render pueda conectarse; evita abrir acceso global si puedes usar una lista de IPs/rangos permitidos adecuados a tu plan.
-- El Blueprint crea Keycloak en modo producción y una base PostgreSQL administrada por Render. Estos son servicios separados de MongoDB Atlas y se crean al aplicar el Blueprint; revisa el costo mostrado por Render antes de confirmarlo.
+- El Blueprint está configurado con planes gratuitos para la API, Keycloak y PostgreSQL. Son solo para pruebas o demostraciones, no para producción ni datos reales: los servicios web se duermen tras 15 minutos sin tráfico y el PostgreSQL gratuito expira a los 30 días.
 - No importes en producción `keycloak/realm-piedrazul.json`: contiene usuarios y configuración de desarrollo.
 - El cliente de servicio de Keycloak tiene un secreto versionado en ese archivo. Trátalo como expuesto, rótalo y configura el secreto nuevo solo en Render.
 - El contenedor de [Keycloak](../keycloak/Dockerfile) toma la conexión interna de PostgreSQL de Render, la configura como JDBC y usa el hostname HTTPS que Render asigna. Si agregas un dominio personalizado, configura `KC_HOSTNAME` manualmente con ese dominio.
@@ -13,7 +13,7 @@ El frontend Angular se despliega en Vercel. El Blueprint [`render.yaml`](../rend
 ## 2. Render: Keycloak, PostgreSQL y API
 
 1. En Render, crea un **Blueprint** y conecta este repositorio. Render leerá el archivo `render.yaml`.
-2. Revisa los recursos y costos que Render propone antes de aplicar el Blueprint. Se crean `piedrazul-keycloak`, `piedrazul-keycloak-db` y `piedrazul-api`; la base PostgreSQL solo acepta conexiones internas de Render.
+2. Revisa el plan que Render propone antes de aplicarlo: `piedrazul-keycloak`, `piedrazul-keycloak-db` y `piedrazul-api` deben aparecer como **Free**. La base PostgreSQL solo acepta conexiones internas de Render. Render permite una sola base PostgreSQL gratuita activa por workspace.
 3. En el primer despliegue, Render pedirá los valores `sync: false` de la API. Introduce los valores reales de MongoDB y CORS. Para `Keycloak__Authority` y `Keycloak__ServiceClientSecret`, usa valores provisionales seguros; los actualizarás después de crear el realm y el cliente. Si el servicio API ya existía, agrega o actualiza esas variables desde su panel **Environment**.
 4. Render genera `KC_BOOTSTRAP_ADMIN_PASSWORD`; consúltalo en las variables de `piedrazul-keycloak` y guárdalo de forma segura. Inicia sesión en la consola de administración y crea el realm `piedrazul`, el cliente público `piedrazul-frontend` con Authorization Code + PKCE y el cliente confidencial `piedrazul-api`.
 5. Configura el cliente frontend con el dominio HTTPS de Vercel en sus redirect URIs y web origins. Asegúrate de que los tokens incluyan el audience `piedrazul-api` y los roles que valida la API. No importes usuarios ni el secreto del realm de desarrollo.
@@ -29,6 +29,12 @@ Las variables manuales de la API son:
 | `Cors__AllowedOrigins__0` | Origen de Vercel, por ejemplo `https://<app>.vercel.app`, sin `/` final |
 
 El Blueprint también define `ASPNETCORE_ENVIRONMENT=Production`, la base Mongo `piedrazul_db`, el realm y los IDs de cliente esperados. Las credenciales PostgreSQL se conectan automáticamente a Keycloak y no se comparten con la API. La API falla al iniciar si faltan variables requeridas o si CORS no contiene un origen HTTPS exacto.
+
+### Límites de los planes gratuitos
+
+- Los servicios web gratuitos se duermen tras 15 minutos sin tráfico; la primera petición puede tardar alrededor de un minuto mientras arrancan.
+- Render PostgreSQL gratuito ofrece 1 GB y expira a los 30 días. Si no se actualiza a un plan pago durante el período de gracia, Render elimina la base y los datos de Keycloak.
+- Usa solamente cuentas y datos ficticios. Para mantener Keycloak disponible y conservar su base de datos, tendrás que pasar a planes pagos antes de esos límites.
 
 Render proporciona el puerto público `10000` usado por Keycloak. El `Dockerfile` hace que ASP.NET Core escuche en `0.0.0.0` en el puerto de Render. `/health` confirma que la API está activa; no comprueba disponibilidad de MongoDB ni de Keycloak.
 
