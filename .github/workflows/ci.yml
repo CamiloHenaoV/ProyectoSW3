@@ -40,5 +40,9 @@ jobs:
         run: dotnet restore backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj
       - name: Run tests
         run: dotnet test backend/CitasMedicas.Api.Tests/CitasMedicas.Api.Tests.csproj --no-restore --configuration Release
+      - name: Check Keycloak entrypoint syntax
+        run: sh -n keycloak/render-entrypoint.sh
       - name: Build Render container
         run: docker build --tag piedrazul-api:ci backend/CitasMedicas.Api
+      - name: Build Keycloak container
+        run: docker build --tag piedrazul-keycloak:ci keycloak

@@ -1,31 +1,36 @@
 # Despliegue en Vercel y Render con MongoDB Atlas
 
-El frontend Angular se despliega en Vercel y la API ASP.NET Core en Render mediante el `Dockerfile` del backend. MongoDB Atlas aloja los datos. El Blueprint [`render.yaml`](../render.yaml) define el servicio API y las variables que deben completarse en Render.
+El frontend Angular se despliega en Vercel. El Blueprint [`render.yaml`](../render.yaml) define la API ASP.NET Core, Keycloak y una base PostgreSQL privada para Keycloak. MongoDB Atlas sigue alojando los datos de la aplicación; PostgreSQL solo almacena los datos internos de Keycloak.
 
 ## 1. Preparar servicios externos
 
 - Crea una base y un usuario de MongoDB Atlas con permisos mínimos para la base de la aplicación. Configura el acceso de red para que Render pueda conectarse; evita abrir acceso global si puedes usar una lista de IPs/rangos permitidos adecuados a tu plan.
-- Configura un realm de Keycloak de producción con URL pública HTTPS. No importes en producción `keycloak/realm-piedrazul.json`: contiene usuarios y configuración de desarrollo.
+- El Blueprint crea Keycloak en modo producción y una base PostgreSQL administrada por Render. Estos son servicios separados de MongoDB Atlas y se crean al aplicar el Blueprint; revisa el costo mostrado por Render antes de confirmarlo.
+- No importes en producción `keycloak/realm-piedrazul.json`: contiene usuarios y configuración de desarrollo.
 - El cliente de servicio de Keycloak tiene un secreto versionado en ese archivo. Trátalo como expuesto, rótalo y configura el secreto nuevo solo en Render.
-- Configura el cliente frontend como público con Authorization Code + PKCE, y añade el dominio HTTPS de Vercel en sus redirect URIs y web origins.
-- Asegúrate de que los tokens incluyan el audience `piedrazul-api` y los roles que valida la API.
+- El contenedor de [Keycloak](../keycloak/Dockerfile) toma la conexión interna de PostgreSQL de Render, la configura como JDBC y usa el hostname HTTPS que Render asigna. Si agregas un dominio personalizado, configura `KC_HOSTNAME` manualmente con ese dominio.
 
-## 2. Render: API
+## 2. Render: Keycloak, PostgreSQL y API
 
 1. En Render, crea un **Blueprint** y conecta este repositorio. Render leerá el archivo `render.yaml`.
-2. El Blueprint configura el servicio `piedrazul-api`, el directorio raíz `backend/CitasMedicas.Api`, el `Dockerfile` y el health check `/health`.
-3. Completa en Render las variables marcadas para introducirse manualmente:
+2. Revisa los recursos y costos que Render propone antes de aplicar el Blueprint. Se crean `piedrazul-keycloak`, `piedrazul-keycloak-db` y `piedrazul-api`; la base PostgreSQL solo acepta conexiones internas de Render.
+3. En el primer despliegue, Render pedirá los valores `sync: false` de la API. Introduce los valores reales de MongoDB y CORS. Para `Keycloak__Authority` y `Keycloak__ServiceClientSecret`, usa valores provisionales seguros; los actualizarás después de crear el realm y el cliente. Si el servicio API ya existía, agrega o actualiza esas variables desde su panel **Environment**.
+4. Render genera `KC_BOOTSTRAP_ADMIN_PASSWORD`; consúltalo en las variables de `piedrazul-keycloak` y guárdalo de forma segura. Inicia sesión en la consola de administración y crea el realm `piedrazul`, el cliente público `piedrazul-frontend` con Authorization Code + PKCE y el cliente confidencial `piedrazul-api`.
+5. Configura el cliente frontend con el dominio HTTPS de Vercel en sus redirect URIs y web origins. Asegúrate de que los tokens incluyan el audience `piedrazul-api` y los roles que valida la API. No importes usuarios ni el secreto del realm de desarrollo.
+6. En el panel **Environment** de `piedrazul-api`, reemplaza los valores provisionales de `Keycloak__Authority` y `Keycloak__ServiceClientSecret` por los definitivos; Render volverá a desplegar la API.
+
+Las variables manuales de la API son:
 
 | Variable | Valor |
 |---|---|
 | `MongoDbSettings__ConnectionString` | URI de MongoDB Atlas, mantener secreta |
-| `Keycloak__Authority` | `https://<host-keycloak>/realms/piedrazul` |
+| `Keycloak__Authority` | `https://<host-keycloak>/realms/piedrazul` (hostname público HTTPS de `piedrazul-keycloak`) |
 | `Keycloak__ServiceClientSecret` | Secreto nuevo del cliente confidencial de servicio, mantener secreto |
 | `Cors__AllowedOrigins__0` | Origen de Vercel, por ejemplo `https://<app>.vercel.app`, sin `/` final |
 
-El Blueprint también define `ASPNETCORE_ENVIRONMENT=Production`, la base `piedrazul_db`, el realm y los IDs de cliente esperados. La API falla al iniciar si faltan variables requeridas o si CORS no contiene un origen HTTPS exacto.
+El Blueprint también define `ASPNETCORE_ENVIRONMENT=Production`, la base Mongo `piedrazul_db`, el realm y los IDs de cliente esperados. Las credenciales PostgreSQL se conectan automáticamente a Keycloak y no se comparten con la API. La API falla al iniciar si faltan variables requeridas o si CORS no contiene un origen HTTPS exacto.
 
-Render proporciona `PORT`; el `Dockerfile` hace que ASP.NET Core escuche en `0.0.0.0` en ese puerto. `/health` confirma que la API está activa; no comprueba disponibilidad de MongoDB ni de Keycloak.
+Render proporciona el puerto público `10000` usado por Keycloak. El `Dockerfile` hace que ASP.NET Core escuche en `0.0.0.0` en el puerto de Render. `/health` confirma que la API está activa; no comprueba disponibilidad de MongoDB ni de Keycloak.
 
 ## 3. Vercel: frontend
 
